@@ -51,9 +51,47 @@ public class Iperfer {
 			System.out.println(c.getBandWidthInfo());
 
 		} else if(args[0].equals("-s")) {
-			Server s = new Server();
-			s.startListening(3501);
-		}
+			
+			Server sObj = new Server();
+			returnValue = sObj.validateInput(args);
+			if(returnValue != 0) {
+				/* Invalid Inputs */
+				switch(returnValue) {
+					case -1:
+						System.out.println("Error: Missing arguements!");
+						break;
+					case -2:
+						System.out.println("Error: Additional arguments!");
+						break;
+					case -3:
+						System.out.println("Error: Invalid value for port number or time!");
+						break;
+					case -4:
+						System.out.println("Error: Invalid options & arguments!");
+						break;
+					case -5:
+						System.out.println("Error: port number must be in range 1024 to 65535!" );
+						break;
+				}
+				Iperfer.printUsage();
+				System.exit(0);
+			}
+
+			returnValue = sObj.establishConnection();
+			if(returnValue != 0) {
+				System.out.println("Error: Could not establish connection with Client!");
+				System.exit(0);
+			}
+			sObj.getData();
+			sObj.closeConnection();
+			/* TBD : Handle error cases */
+
+			/* Bandwidth Calculation and display */
+			System.out.println(sObj.getBandwidthInfo());
+
+
+
+		}	
 		else {
 			System.out.println("Invalid Endpoint!\n");
 		}
