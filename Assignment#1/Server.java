@@ -12,11 +12,12 @@ public class Server {
 					clientSocket.getOutputStream(), true);
 			BufferedReader in = new BufferedReader(
 				new InputStreamReader(clientSocket.getInputStream()));
+			DataInputStream dIn = new DataInputStream(clientSocket.getInputStream());
 			String input;
-			while((input = in.readLine()) != null) {
-				System.out.println("Client : " + input);
-				out.println(input);
-				System.out.println("Server : " + input);
+			while(true) {
+				byte message[] = new byte[1000];
+				dIn.readFully(message, 0, 1000);
+				System.out.println("Recieved!");
 			}
 		} catch(IOException e) {
 			System.out.println("Error : Exception while listening to the port! " + portNumber);

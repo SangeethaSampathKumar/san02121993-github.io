@@ -4,33 +4,30 @@ import java.util.regex.*;
 import java.util.*;
 
 public class Client {
+
+	/* Data Members */
+	Socket clientSocket;
+	DataOutputStream outputStream;
 	String serverName;
 	int portNumber;
 	int time;
-	byte dataChunks[];
-	int totalBytesSent;
-	float bandWidth;
-	Socket clientSocket;
-	PrintWriter outputStream;
+	int bytesSent;
+	float bandwidth;
 
+	/* Constructor which initializes data members with default values */
 	public Client() {
 		this.serverName = "0.0.0.0";
 		this.portNumber = 0;
 		this.time = 0;
-		this.dataChunks = new byte[1000];
-		totalBytesSent = 0;
-		clientSocket = null;
-		outputStream = null;
+		this.bytesSent = 0;
+		this.clientSocket = null;
+		this.outputStream = null;
 	}
 
 	void printClientInfo() {
 		System.out.println("Server Name : " + this.serverName);
 		System.out.println("Port Number : " + this.portNumber);
 		System.out.println("Time : " + this.time);
-		System.out.println("Data : ");
-		for(byte val : dataChunks);
-			//System.out.print(val + " ");
-		System.out.println();
 	}
 
 	int validateInput(String args[]) {
@@ -55,6 +52,7 @@ public class Client {
 
 		if(m.find()) {
 			this.serverName = m.group(1);
+			// TBD : Server Name Validation
 			try {
 				this.portNumber = Integer.parseInt(m.group(2));
 				this.time = Integer.parseInt(m.group(3));
@@ -69,14 +67,13 @@ public class Client {
 		if(portNumber < 1024 || portNumber > 65534)
 			return -5;
 
-		return 1;
+		return 0;
 	}
 
 	int establishConnection() {
 		try {
 			clientSocket = new Socket(this.serverName, this.portNumber);
-			outputStream = new PrintWriter(
-				clientSocket.getOutputStream(), true);
+			outputStream = new DataOutputStream(clientSocket.getOutputStream());
 		} catch(UnknownHostException e) {
 			System.out.println("Error : Unknown host name " + serverName);
 			return -1;
@@ -89,34 +86,44 @@ public class Client {
 
 	void closeConnection() {
 		try {
-			clientSocket.close();
 			outputStream.close();
+			clientSocket.close();
 		} catch(IOException e) {
+			// TBD : Handle exception
 			System.out.println("Error : Exception " + e);
 		}
 	}
 
 	void pushData() {
-		totalBytesSent = 0;
+		// Data of 1000 bytes sent from Client - all initiatlized to '0'
+		byte data[] = new byte[1000];
 		long start, now, timeTaken = 0;
+
+		bytesSent = 0;
 		try {
 			start = System.nanoTime();
 			while(true) {
 				now = System.nanoTime();
-				timeTaken = (now - start) / 1000000;
+				timeTaken = (now - start) / 1000000000;
 				if(timeTaken < this.time) {
-					outputStream.println(this.dataChunks);
-					totalBytesSent += 1000;
+					outputStream.write(data);
+					bytesSent += 1000;
 				}
 				else {
 					break;
 				}
 			}
 		} catch(Exception e) {
+			// TBD : Handle Exceptions
 			System.out.println("Error : Exception " + e);
 		}
-		System.out.println("Time Taken : " + timeTaken);
-		System.out.println("Total Bytes Sent : " + totalBytesSent);
-		bandWidth = totalBytesSent * 8 / time;
+	}
+
+	String getBandWidthInfo() {
+		String bandwidthInfo;
+		this.bandwidth = (this.bytesSent * 8) / time;
+		bandwidthInfo = "sent=" + this.bytesSent + "B " + "rate=" + this.bandwidth + "bps";
+		// TBD : BW & Data Sent - Unit to be displayed
+		return bandwidthInfo;
 	}
 }

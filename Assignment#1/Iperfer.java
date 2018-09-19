@@ -1,22 +1,55 @@
 public class Iperfer {
 	public static void main(String args[]) {
+		int returnValue;
+
 		if(args.length < 1) {
-			System.out.println("Usage :"); 
-			System.out.println("Client : java Iperfer -c -h <Host Name> -p <Port Number> -t <Time>");
-			System.out.println("Server : java Iperfer -s -p <Port Number>");
+			System.out.println("Error: Missing arguements!");
+			Iperfer.printUsage();
 			System.exit(0);
-			//return -1;
 		}
 
 		if(args[0].equals("-c")) {
 			Client c = new Client();
-			int val = c.validateInput(args);
-			System.out.println("Return : " + val);
-			c.printClientInfo();
-			c.establishConnection();
+
+			returnValue = c.validateInput(args);
+			if(returnValue != 0) {
+				/* Invalid Inputs */
+				switch(returnValue) {
+					case -1:
+						System.out.println("Error: Missing arguements!");
+						break;
+					case -2:
+						System.out.println("Error: Additional arguments!");
+						break;
+					case -3:
+						System.out.println("Error: Invalid value for port number or time!");
+						break;
+					case -4:
+						System.out.println("Error: Invalid options & arguments!");
+						break;
+					case -5:
+						System.out.println("Error: port number must be in range 1024 to 65535!");
+						break;
+				}
+				Iperfer.printUsage();
+				System.exit(0);
+			}
+
+			//System.out.println("Return : " + val);
+			//c.printClientInfo();
+
+			returnValue = c.establishConnection();
+			if(returnValue != 0) {
+				System.out.println("Error: Could not establish connection with Server!");
+				System.exit(0);
+			}
 			c.pushData();
 			c.closeConnection();
-			System.out.println("sent=" + c.totalBytesSent + "Bytes rate=" + c.bandWidth + "bps");
+			/* TBD : Handle error cases */
+
+			/* Bandwidth Calculation and display */
+			System.out.println(c.getBandWidthInfo());
+
 		} else if(args[0].equals("-s")) {
 			Server s = new Server();
 			s.startListening(3501);
@@ -25,5 +58,11 @@ public class Iperfer {
 			System.out.println("Invalid Endpoint!\n");
 		}
 		//return 1;
+	}
+
+	static void printUsage() {
+			System.out.println("USAGE:");
+			System.out.println("Client : java Iperfer -c -h <Host Name> -p <Port Number> -t <Time>");
+			System.out.println("Server : java Iperfer -s -p <Port Number>");
 	}
 }
