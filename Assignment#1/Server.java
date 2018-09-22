@@ -109,8 +109,8 @@ public class Server {
 
 	String getBandwidthInfo(){
 		String bandWidthInfo;
-		bandWidth = (this.totalBytesReceived * 8) / this.time;
-		bandWidthInfo = "Received=" + this.totalBytesReceived + "B " + "rate=" + bandWidth + "bps";
+		this.bandWidth = ((this.totalBytesReceived * 8) /(1000*1000))/ this.time;
+		bandWidthInfo = "Received=" + (this.totalBytesReceived/1000) + "B " + "rate=" + bandWidth + "bps";
 		// TBD : BW & Data Sent - Unit to be displayed
 		return bandWidthInfo;
 	}
