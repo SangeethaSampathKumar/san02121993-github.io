@@ -61,7 +61,7 @@ public class Server {
 			sb.append(args[i]);
 		}
 		inputArguments = sb.toString();
-		System.out.println(inputArguments);
+		//System.out.println(inputArguments);
 		/* Regular expression to group the arguments */
 		Pattern p = Pattern.compile("^-s\\s-p\\s(\\d+)$");
 		Matcher m = p.matcher(inputArguments);
@@ -91,7 +91,7 @@ public class Server {
 	*/
 	int establishConnection() {
 		try {
-			System.out.println("Message: Server is listening Port Number: " + this.portNumber + "for client connection");
+			System.out.println("Message: Server is listening Port Number: " + this.portNumber + " for client connection");
 			/* Creating server socket object */
 			serverSocket = new ServerSocket(this.portNumber);
 			/* Accepting client connection using serversocket.accept method */
@@ -161,15 +161,15 @@ public class Server {
 	}
 
 	/**
-	* Method Name:  getBandwidthInfo - calculates bandwidth
+	* Method Name:  getBandwidthInfo - calculates data rate
 	* @return String: Received= <Integer>KB rate=<bandWidth>Mbps"
 	*/
 	String getBandwidthInfo(){
-		System.out.println("Message: Calculating Bandwidth in Server");
+		System.out.println("Message: Calculating Data rate in Server");
 		String bandWidthInfo;
 		/* Calculate bandwidth in Mbps */
 		this.bandWidth = ((this.totalKiloBytesReceived/1000)*8) / this.time;
-		bandWidthInfo = "Received = " + this.totalKiloBytesReceived + " KB " + "rate = " + bandWidth + " Mbps";
+		bandWidthInfo = "Received=" + this.totalKiloBytesReceived + " KB " + "rate=" + bandWidth + " Mbps";
 		return bandWidthInfo;
 	}
 }
