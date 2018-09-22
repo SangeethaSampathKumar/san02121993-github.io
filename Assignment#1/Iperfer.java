@@ -2,8 +2,12 @@ public class Iperfer {
 	public static void main(String args[]) {
 		int returnValue;
 
+		System.out.println("------------------------------------------------");
+		System.out.println("Iperfer Tool");
+		System.out.println("------------------------------------------------");
+
 		if(args.length < 1) {
-			System.out.println("Error: Missing arguements!");
+			System.out.println("Error: missing or additional arguments");
 			Iperfer.printUsage();
 			System.exit(0);
 		}
@@ -11,6 +15,7 @@ public class Iperfer {
 		if(args[0].equals("-c")) {
 			Client c = new Client();
 
+			System.out.println("Message: Creating a Client");
 			returnValue = c.validateInput(args);
 			if(returnValue != 0) {
 				/* Invalid Inputs */
@@ -34,6 +39,7 @@ public class Iperfer {
 				Iperfer.printUsage();
 				System.exit(0);
 			}
+			System.out.println("Message: Client Created successfully");
 
 			//System.out.println("Return : " + val);
 			//c.printClientInfo();
@@ -41,13 +47,25 @@ public class Iperfer {
 			returnValue = c.establishConnection();
 			if(returnValue != 0) {
 				System.out.println("Error: Could not establish connection with Server!");
+				System.out.println("------------------------------------------------");
 				System.exit(0);
 			}
-			c.pushData();
-			c.closeConnection();
+			System.out.println("Message: Established connection with " + c.serverName + " on port number " + c.portNumber);
+
+			System.out.println("Message: Sending data chunks of 1000 bytes for " + c.time + " seconds");
+			returnValue = c.pushData();
+			if(returnValue != 0)
+			{
+				System.out.println("------------------------------------------------");
+				System.exit(0);
+			}
+			System.out.println("Message: Sending completed");
+
+			returnValue = c.closeConnection();
 			/* TBD : Handle error cases */
 
 			/* Bandwidth Calculation and display */
+			System.out.println("Message: Performance metrics");
 			System.out.println(c.getBandWidthInfo());
 
 		} else if(args[0].equals("-s")) {
@@ -93,14 +111,15 @@ public class Iperfer {
 
 		}	
 		else {
-			System.out.println("Invalid Endpoint!\n");
+			System.out.println("Error: Invalid option");
 		}
-		//return 1;
+		System.out.println("------------------------------------------------");
 	}
 
 	static void printUsage() {
-			System.out.println("USAGE:");
-			System.out.println("Client : java Iperfer -c -h <Host Name> -p <Port Number> -t <Time>");
-			System.out.println("Server : java Iperfer -s -p <Port Number>");
+		System.out.println("Usage:");
+		System.out.println("Client: java Iperfer -c -h <Host Name> -p <Port Number> -t <Time>");
+		System.out.println("Server: java Iperfer -s -p <Port Number>");
+		System.out.println("------------------------------------------------");
 	}
 }
