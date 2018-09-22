@@ -20,36 +20,31 @@ public class Server {
 	int portNumber;
 	long time;
 	int totalKiloBytesReceived;
-    float bandWidth;
+        float bandWidth;
 	
 	
 	/**
-    * Constructor which initializes data members with default values
+	* Method Name: Server() - Constructor which initializes data members with default values
  	*/
 	public Server() {
 		this.portNumber = 0;
 		this.time = 0;
-        this.totalKiloBytesReceived = 0;
-        this.serverSocket = null;
+                this.totalKiloBytesReceived = 0;
+	        this.serverSocket = null;
 		this.clientSocket = null;
 		this.inputStream = null;
 	}
 
-	void printServerInfo() {
-		System.out.println("Message:: Server is listening on Port Number: " + this.portNumber);
-	}
-
 	/**
-    * Method to validate command line inputs and return error codes
- 	*
+    	* Method Name:  validateInput - to validate command line inputs and return error codes
 	* @param String args[]: Array of strings obtained as command line arguments
 	* @return Type: int
-					-1 : missing arguments
-				 	-2 : extra arguments
-					-3 : invalid port number type
-					-4 : port number not found
-					-5 : port number not within valid range 
-					0 : validation successful
+			-1 : missing arguments
+			-2 : extra arguments
+			-3 : invalid port number type
+			-4 : port number not found
+			-5 : port number not within valid range 
+			0 : validation successful
  	*/
 	int validateInput(String args[]) {
 		/* Missing Arguments */
@@ -68,7 +63,7 @@ public class Server {
 		inputArguments = sb.toString();
 		System.out.println(inputArguments);
 		/* Regular expression to group the arguments */
-        Pattern p = Pattern.compile("^-s\\s-p\\s(\\d+)$");
+        	Pattern p = Pattern.compile("^-s\\s-p\\s(\\d+)$");
 		Matcher m = p.matcher(inputArguments);
 
 		if(m.find()) {
@@ -89,10 +84,10 @@ public class Server {
 	}
 
 	/**
-	* Method to establish connection
+	* Method name: establishConnection - Method to establish connection
 	* @return Type: int 
-				0 : connection successful
-				-2 : IO exception
+			0 : connection successful
+			-1 : IO Exception
  	*/
 	int establishConnection() {
 		try {
@@ -106,8 +101,7 @@ public class Server {
 			inputStream = new DataInputStream(clientSocket.getInputStream());
 	   
 		}catch(IOException e) {
-			//System.out.println("Error : I/O error with " + serverName);
-			return -2;
+			return -1;
 		}catch(Exception e) {
 			System.out.println("Error : Exception " + e);
 		}
@@ -115,12 +109,12 @@ public class Server {
 	}
 
 	/**
-	* Method to close connection
+	* Method Name : closeConnection() - to close connection
  	*/
 	void closeConnection() {
 		try {
 			System.out.println("Message: Closing Socket Connections..");
-		    /* Closing input stream */
+		    	/* Closing input stream */
 			inputStream.close();
 			/* Closing client socket */
 			clientSocket.close();
@@ -134,9 +128,9 @@ public class Server {
 	}
 
 	/**
-	* Method to get Data from client
+	* Method Name: getData() -  to get Data from client
  	*/
-    void getData() {
+    	void getData() {
 		
 		totalKiloBytesReceived = 0;
 		long start, now = 0;
@@ -148,7 +142,7 @@ public class Server {
 			start = System.nanoTime();
 			int bytes_count=0;
 			/* Obtaining data from client and incrementing in Kilo Bytes during the connection time period */
-            while ((count = inputStream.read(data1)) > 0) {
+            		while ((count = inputStream.read(data1)) > 0) {
 			   bytes_count += count;
 			   if(bytes_count == 1000){
 			    	totalKiloBytesReceived += 1;
@@ -168,7 +162,7 @@ public class Server {
 	}
 
 	/**
-	* Method to get BandwidthInfo
+	* Method Name:  getBandwidthInfo - calculates bandwidth
 	* @return String: Received= <Integer>KB rate=<bandWidth>Mbps"
  	*/
 	String getBandwidthInfo(){
