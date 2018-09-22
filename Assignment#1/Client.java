@@ -3,33 +3,67 @@ import java.net.*;
 import java.util.regex.*;
 import java.util.*;
 
+/**
+ * Class Name : Client
+ * Client class encloses data members and methods necessary for connection
+ * with server and calculation of the performance metrics.
+ *
+ * @author (Shebin Roy Yesudhas : royyesudhas@wisc.edu)
+ * @author (Sangeetha Sampath Kumar : sampathkuma4@wisc.edu)
+ */
 public class Client {
 
-	/* Data Members */
+	/* Data Members required for connection */
 	Socket clientSocket;
 	DataOutputStream outputStream;
+
+	/* Data Memebers to be passed as input */
 	String serverName;
 	int portNumber;
 	int time;
-	int bytesSent;
+
+	/* Data Members required for bandwidth calculation */
+	int dataSent;
 	float bandwidth;
 
-	/* Constructor which initializes data members with default values */
+	/**
+	 * Constructor of Class Client
+	 * Initializes data members to default values
+	 */
 	public Client() {
 		this.serverName = "0.0.0.0";
 		this.portNumber = 0;
 		this.time = 0;
-		this.bytesSent = 0;
+		this.dataSent = 0;
 		this.clientSocket = null;
 		this.outputStream = null;
 	}
 
+	/**
+	 * Method Name : printClientInfo
+	 * Prints the data member values of client object
+	 */
 	void printClientInfo() {
 		System.out.println("Server Name : " + this.serverName);
 		System.out.println("Port Number : " + this.portNumber);
 		System.out.println("Time : " + this.time);
 	}
 
+	/**
+	 * Method Name : validateInput
+	 * Validates the input with respect to expected format and expected
+	 * values. If the values are of expected range, then updates the data
+	 * members to the values passed as input.
+	 *
+	 * @param (String args[]) (Array of input values passed in the command line)
+	 * @return (Type : int
+	 *		 0 : Success
+	 *		-1 : less number of arguments than expected
+	 *		-2 : more number of arguments than expected
+	 *		-3 : port number and time is of wrong format
+	 *		-4 : arguments passed is of wrong format
+	 *		-5 : port number is not of expected range)
+	 */
 	int validateInput(String args[]) {
 		/* Missing Arguments */
 		if(args.length < 7)
@@ -45,7 +79,7 @@ public class Client {
 			sb.append(args[i]);
 		}
 		inputArguments = sb.toString();
-		System.out.println(inputArguments);
+		//System.out.println(inputArguments);
 
 		Pattern p = Pattern.compile("^-c\\s-h\\s(.*)\\s-p\\s(\\d+)\\s-t\\s(\\d+)$");
 		Matcher m = p.matcher(inputArguments);
@@ -70,61 +104,105 @@ public class Client {
 		return 0;
 	}
 
+	/**
+	 * Method Name : establishConnection
+	 * Establishes connection with a server on the port given as input and
+	 * intansiates an output stream for the socket
+	 *
+	 * @return (Type : int
+	 *		 0 : Success
+	 *		-1 : Unknown host exception
+	 *		-2 : I/O error exception)
+	 */
 	int establishConnection() {
 		try {
 			clientSocket = new Socket(this.serverName, this.portNumber);
 			outputStream = new DataOutputStream(clientSocket.getOutputStream());
 		} catch(UnknownHostException e) {
-			System.out.println("Error : Unknown host name " + serverName);
+			System.out.println("Error: Unknown host name " + serverName);
 			return -1;
 		} catch(IOException e) {
-			System.out.println("Error : I/O error with " + serverName);
+			System.out.println("Error: I/O error with " + serverName);
 			return -2;
 		}
 		return 0;
 	}
 
-	void closeConnection() {
+	/**
+	 * Method Name : closeConnection
+	 * Closes the output stream and connection on the socket
+	 *
+	 * @return (Type : int
+	 *		 0 : Success
+	 *		-1 : Exception)
+	 */
+	int closeConnection() {
 		try {
 			outputStream.close();
 			clientSocket.close();
 		} catch(IOException e) {
-			// TBD : Handle exception
-			System.out.println("Error : Exception " + e);
+			System.out.println("Error: Exception " + e);
+			return -1;
 		}
+		return 0;
 	}
 
-	void pushData() {
-		// Data of 1000 bytes sent from Client - all initiatlized to '0'
+	/**
+	 * Method Name : pushData
+	 * Pushes data of 1000 bytes during every iteration for t seconds give as
+	 * input. Saves the total data sent in Kilo Bytes
+	 *
+	 * @return (Type : int
+	 *		 0 : Success
+	 *		-1 : Exception)
+	 */
+	int pushData() {
+		/* Data of 1000 bytes sent from Client - all initiatlized to '0' */
 		byte data[] = new byte[1000];
 		long start, now, timeTaken = 0;
 
-		bytesSent = 0;
+		dataSent = 0;
 		try {
 			start = System.nanoTime();
+			/* Sends data till time expires */
 			while(true) {
 				now = System.nanoTime();
 				timeTaken = (now - start) / 1000000000;
 				if(timeTaken < this.time) {
 					outputStream.write(data);
-					bytesSent += 1000;
+					/* 1000 Bytes = 1 KByte
+					* Since, the data sent is calculated as 1KB per sending,
+					* Hence, adding 1 instead of 1000 */
+					dataSent += 1;
 				}
 				else {
 					break;
 				}
 			}
 		} catch(Exception e) {
-			// TBD : Handle Exceptions
-			System.out.println("Error : Exception " + e);
+			System.out.println("Error: Exception " + e);
+			return -1;
 		}
+		return 0;
 	}
 
+	/**
+	 * Method Name : getBandWidth
+	 * Calculates bandwidth based on the data collected for the previous connection
+	 * and returns a String object in expected format
+	 *
+	 * @return (Type : String of data sent and rate in expected format)
+	 */
 	String getBandWidthInfo() {
 		String bandwidthInfo;
-		this.bandwidth = ((this.bytesSent * 8) / (1000 * 1000)) / this.time;
 
-		bandwidthInfo = "sent=" + (this.bytesSent/1000) + " KB " + "rate=" + this.bandwidth + " Mbps";
-		// TBD : BW & Data Sent - Unit to be displayed
+		/* Expected Bandwidth metric : Mbps - Mega bits per second
+		* Data sent : X KBytes
+		* Bandwidth : X * 8 / 1000 / time -> Megabits per Second
+		* Note : To avoid overflows, divided before converting to bits
+		*/
+		this.bandwidth = ((this.dataSent / 1000) * 8) / this.time;
+		bandwidthInfo = "sent=" + this.dataSent + " KB " + "rate=" + this.bandwidth + " Mbps";
 		return bandwidthInfo;
 	}
 }
