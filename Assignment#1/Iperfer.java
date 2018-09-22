@@ -1,4 +1,32 @@
+///////////////////////////////////////////////////////////////////////////////
+// Title:            (Iperfer Application - Assignment #1)
+// Files:            (Iperfer.java, Client.java, Server.java)
+// Semester:         (CS640) Fall 2018
+//
+// Author:           (Shebin Roy Yesudhas, Sangeetha Sampath Kumar)
+// Email:            (royyesudhas@wisc.edu, sampathkuma4@wisc.edu)
+// CS Login:         (shebinroy, sangeetha)
+// Lecturer's Name:  (Aditya Akella)
+//
+//////////////////// PAIR PROGRAMMERS COMPLETE THIS SECTION ////////////////////
+
+/**
+ * Class Name : Iperfer
+ * Iperfer class encloses the main function which creates either Client or Server
+ * object based on user input from the command line arguments. Based on the object
+ * created, different methods are invoked and the performance metrics is finally
+ * displayed to the user
+ *
+ * @author (Shebin Roy Yesudhas : royyesudhas@wisc.edu)
+ * @author (Sangeetha Sampath Kumar : sampathkuma4@wisc.edu)
+ */
 public class Iperfer {
+	/**
+	 * Method Name : main
+	 * Controls the follow of execution based on user input
+	 *
+	 * @param (String args[]) (Array of input values passed in the command line)
+	 */
 	public static void main(String args[]) {
 		int returnValue;
 
@@ -116,6 +144,12 @@ public class Iperfer {
 		System.out.println("------------------------------------------------");
 	}
 
+	/**
+	 * Method Name : printUsage
+	 * Static function which displays the usage of the Iperfer Application
+	 *
+	 * @param (String args[]) (Array of input values passed in the command line)
+	 */
 	static void printUsage() {
 		System.out.println("Usage:");
 		System.out.println("Client: java Iperfer -c -h <Host Name> -p <Port Number> -t <Time>");
