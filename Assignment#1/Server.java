@@ -20,23 +20,23 @@ public class Server {
 	int portNumber;
 	long time;
 	int totalKiloBytesReceived;
-        float bandWidth;
-	
-	
+	float bandWidth;
+
+
 	/**
 	* Method Name: Server() - Constructor which initializes data members with default values
- 	*/
+	*/
 	public Server() {
 		this.portNumber = 0;
 		this.time = 0;
-                this.totalKiloBytesReceived = 0;
-	        this.serverSocket = null;
+		this.totalKiloBytesReceived = 0;
+		this.serverSocket = null;
 		this.clientSocket = null;
 		this.inputStream = null;
 	}
 
 	/**
-    	* Method Name:  validateInput - to validate command line inputs and return error codes
+	* Method Name:  validateInput - to validate command line inputs and return error codes
 	* @param String args[]: Array of strings obtained as command line arguments
 	* @return Type: int
 			-1 : missing arguments
@@ -45,7 +45,7 @@ public class Server {
 			-4 : port number not found
 			-5 : port number not within valid range 
 			0 : validation successful
- 	*/
+	*/
 	int validateInput(String args[]) {
 		/* Missing Arguments */
 		if(args.length < 3)
@@ -63,7 +63,7 @@ public class Server {
 		inputArguments = sb.toString();
 		System.out.println(inputArguments);
 		/* Regular expression to group the arguments */
-        	Pattern p = Pattern.compile("^-s\\s-p\\s(\\d+)$");
+		Pattern p = Pattern.compile("^-s\\s-p\\s(\\d+)$");
 		Matcher m = p.matcher(inputArguments);
 
 		if(m.find()) {
@@ -85,10 +85,10 @@ public class Server {
 
 	/**
 	* Method name: establishConnection - Method to establish connection
-	* @return Type: int 
+	* @return Type: int
 			0 : connection successful
-			-1 : IO Exception
- 	*/
+			1 : IO Exception
+	*/
 	int establishConnection() {
 		try {
 			System.out.println("Message: Server is listening Port Number: " + this.portNumber + "for client connection");
@@ -99,7 +99,7 @@ public class Server {
 			System.out.println("Message: Client Connection Established Successfully!");
 			/* Creating input stream object to receive data from client */
 			inputStream = new DataInputStream(clientSocket.getInputStream());
-	   
+
 		}catch(IOException e) {
 			return -1;
 		}catch(Exception e) {
@@ -110,16 +110,16 @@ public class Server {
 
 	/**
 	* Method Name : closeConnection() - to close connection
- 	*/
+	*/
 	void closeConnection() {
 		try {
 			System.out.println("Message: Closing Socket Connections..");
-		    	/* Closing input stream */
+			/* Closing input stream */
 			inputStream.close();
 			/* Closing client socket */
 			clientSocket.close();
 			/* Closing server stream */
-			serverSocket.close();  
+			serverSocket.close();
 			System.out.println("Message: Connections closed Successfully");
 
 		} catch(IOException e) {
@@ -129,8 +129,8 @@ public class Server {
 
 	/**
 	* Method Name: getData() -  to get Data from client
- 	*/
-    	void getData() {
+	*/
+	void getData() {
 		
 		totalKiloBytesReceived = 0;
 		long start, now = 0;
@@ -142,19 +142,18 @@ public class Server {
 			start = System.nanoTime();
 			int bytes_count=0;
 			/* Obtaining data from client and incrementing in Kilo Bytes during the connection time period */
-            		while ((count = inputStream.read(data1)) > 0) {
-			   bytes_count += count;
-			   if(bytes_count == 1000){
-			    	totalKiloBytesReceived += 1;
-			   		bytes_count = 0;
-
-			   }
+			while ((count = inputStream.read(data1)) > 0) {
+				bytes_count += count;
+				if(bytes_count == 1000){
+					totalKiloBytesReceived += 1;
+					bytes_count = 0;
+				}
 			}
 			/* Storing end time to calculate bandwidth */
 			now = System.nanoTime();
 			/* Time taken from start to end of the connection : divide by 10^9 to get time in seconds */
 			this.time = (now - start) / 1000000000;
-			System.out.println("Message:: Receive Completed!");
+			System.out.println("Message: Receive Completed!");
 
 		} catch(Exception e) {
 			System.out.println("Error : Exception " + e);
@@ -164,7 +163,7 @@ public class Server {
 	/**
 	* Method Name:  getBandwidthInfo - calculates bandwidth
 	* @return String: Received= <Integer>KB rate=<bandWidth>Mbps"
- 	*/
+	*/
 	String getBandwidthInfo(){
 		System.out.println("Message: Calculating Bandwidth in Server");
 		String bandWidthInfo;
