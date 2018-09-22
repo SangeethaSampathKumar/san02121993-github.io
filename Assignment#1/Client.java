@@ -121,8 +121,9 @@ public class Client {
 
 	String getBandWidthInfo() {
 		String bandwidthInfo;
-		this.bandwidth = (this.bytesSent * 8) / time;
-		bandwidthInfo = "sent=" + this.bytesSent + "B " + "rate=" + this.bandwidth + "bps";
+		this.bandwidth = ((this.bytesSent * 8) / (1000 * 1000)) / this.time;
+
+		bandwidthInfo = "sent=" + (this.bytesSent/1000) + " KB " + "rate=" + this.bandwidth + " Mbps";
 		// TBD : BW & Data Sent - Unit to be displayed
 		return bandwidthInfo;
 	}

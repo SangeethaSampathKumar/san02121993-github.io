@@ -16,10 +16,10 @@ public class Iperfer {
 				/* Invalid Inputs */
 				switch(returnValue) {
 					case -1:
-						System.out.println("Error: Missing arguements!");
+						System.out.println("Error: missing or additional arguments");
 						break;
 					case -2:
-						System.out.println("Error: Additional arguments!");
+						System.out.println("Error: missing or additional arguments");
 						break;
 					case -3:
 						System.out.println("Error: Invalid value for port number or time!");
@@ -28,7 +28,7 @@ public class Iperfer {
 						System.out.println("Error: Invalid options & arguments!");
 						break;
 					case -5:
-						System.out.println("Error: port number must be in range 1024 to 65535!");
+						System.out.println("Error: port number must be in the range 1024 to 65535");
 						break;
 				}
 				Iperfer.printUsage();
@@ -58,10 +58,10 @@ public class Iperfer {
 				/* Invalid Inputs */
 				switch(returnValue) {
 					case -1:
-						System.out.println("Error: Missing arguements!");
+						System.out.println("Error: missing or additional arguments");
 						break;
 					case -2:
-						System.out.println("Error: Additional arguments!");
+						System.out.println("Error: missing or additional arguments");
 						break;
 					case -3:
 						System.out.println("Error: Invalid value for port number or time!");
@@ -70,7 +70,7 @@ public class Iperfer {
 						System.out.println("Error: Invalid options & arguments!");
 						break;
 					case -5:
-						System.out.println("Error: port number must be in range 1024 to 65535!" );
+						System.out.println("Error: port number must be in the range 1024 to 65535");
 						break;
 				}
 				Iperfer.printUsage();
