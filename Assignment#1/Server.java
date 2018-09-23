@@ -19,7 +19,7 @@ public class Server {
 	DataInputStream inputStream;
 	int portNumber;
 	long time;
-	float totalKiloBytesReceived;
+	int totalKiloBytesReceived;
 	float bandWidth;
 
 
@@ -142,18 +142,13 @@ public class Server {
 			start = System.nanoTime();
 			int bytes_count=0;
 			/* Obtaining data from client and incrementing in Kilo Bytes during the connection time period */
-			while ((count = inputStream.read(data1)) > 0) {
-				//bytes_count += count;
-				System.out.println("count " + count); 
-				if(count == 1000){
-					totalKiloBytesReceived += 1;
-					bytes_count = 0;
-				}
-                                else{
-					totalKiloBytesReceived += count/1000;
-             				//System.out.println("not receiveing ");
-			}
-}
+			while (true) {
+				bytes_count = inputStream.read(data1);
+                                if(bytes_count == -1)
+                                        break;
+                                totalKiloBytesReceived += bytes_count;
+                        }
+                        totalKiloBytesReceived = totalKiloBytesReceived/1000;
 			/* Storing end time to calculate bandwidth */
 			now = System.nanoTime();
 			/* Time taken from start to end of the connection : divide by 10^9 to get time in seconds */
