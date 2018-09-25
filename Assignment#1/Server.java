@@ -91,12 +91,10 @@ public class Server {
 	*/
 	int establishConnection() {
 		try {
-			System.out.println("Message: Server is listening Port Number: " + this.portNumber + " for client connection");
 			/* Creating server socket object */
 			serverSocket = new ServerSocket(this.portNumber);
 			/* Accepting client connection using serversocket.accept method */
 			clientSocket = serverSocket.accept();
-			System.out.println("Message: Client Connection Established Successfully!");
 			/* Creating input stream object to receive data from client */
 			inputStream = new DataInputStream(clientSocket.getInputStream());
 
@@ -113,15 +111,12 @@ public class Server {
 	*/
 	void closeConnection() {
 		try {
-			System.out.println("Message: Closing Socket Connections..");
 			/* Closing input stream */
 			inputStream.close();
 			/* Closing client socket */
 			clientSocket.close();
 			/* Closing server stream */
 			serverSocket.close();
-			System.out.println("Message: Connections closed Successfully");
-
 		} catch(IOException e) {
 			System.out.println("Error : Exception " + e);
 		}
@@ -135,7 +130,6 @@ public class Server {
 		totalKiloBytesReceived = 0;
 		long start, now = 0;
 		try{
-			System.out.println("Message: Server started receiving data from client..");
 			int count = 0;
 			byte data1[] = new byte[1000];
 			/* Storing start time */
@@ -153,8 +147,6 @@ public class Server {
 			now = System.nanoTime();
 			/* Time taken from start to end of the connection : divide by 10^9 to get time in seconds */
 			this.time = (now - start) / 1000000000;
-			System.out.println("Message: Receive Completed!");
-
 		} catch(Exception e) {
 			System.out.println("Error : Exception " + e);
 		}
@@ -165,11 +157,10 @@ public class Server {
 	* @return String: Received= <Integer>KB rate=<bandWidth>Mbps"
 	*/
 	String getBandwidthInfo(){
-		System.out.println("Message: Calculating Data rate in Server");
 		String bandWidthInfo;
 		/* Calculate bandwidth in Mbps */
 		this.bandWidth = ((this.totalKiloBytesReceived/1000)*8) / this.time;
-		bandWidthInfo = "Received=" + this.totalKiloBytesReceived + " KB " + "rate=" + bandWidth + " Mbps";
+		bandWidthInfo = "received=" + this.totalKiloBytesReceived + " KB " + "rate=" + bandWidth + " Mbps";
 		return bandWidthInfo;
 	}
 }
