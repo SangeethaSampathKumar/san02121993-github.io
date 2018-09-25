@@ -147,7 +147,7 @@ public class Server {
 					tempBytesCount -= 1000;
 				}
 			}
-			if(tempBytesCount > 1000){
+			if(tempBytesCount == 1000){
 				totalKiloBytesReceived += 1;
 			}
 			/* Storing end time to calculate bandwidth */
