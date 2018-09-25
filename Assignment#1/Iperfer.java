@@ -7,7 +7,7 @@
 // Email:            (royyesudhas@wisc.edu, sampathkuma4@wisc.edu)
 // CS Login:         (shebinroy, sangeetha)
 // Lecturer's Name:  (Aditya Akella)
-//
+///
 //////////////////// PAIR PROGRAMMERS COMPLETE THIS SECTION ////////////////////
 
 /**
@@ -43,7 +43,6 @@ public class Iperfer {
 		if(args[0].equals("-c")) {
 			Client c = new Client();
 
-			System.out.println("Message: Creating a Client");
 			returnValue = c.validateInput(args);
 			if(returnValue != 0) {
 				/* Invalid Inputs */
@@ -67,7 +66,6 @@ public class Iperfer {
 				Iperfer.printUsage();
 				System.exit(0);
 			}
-			System.out.println("Message: Client Created successfully");
 
 			//System.out.println("Return : " + val);
 			//c.printClientInfo();
@@ -78,22 +76,18 @@ public class Iperfer {
 				System.out.println("------------------------------------------------");
 				System.exit(0);
 			}
-			System.out.println("Message: Established connection with " + c.serverName + " on port number " + c.portNumber);
 
-			System.out.println("Message: Sending data chunks of 1000 bytes for " + c.time + " seconds");
 			returnValue = c.pushData();
 			if(returnValue != 0)
 			{
 				System.out.println("------------------------------------------------");
 				System.exit(0);
 			}
-			System.out.println("Message: Sending completed");
 
 			returnValue = c.closeConnection();
 			/* TBD : Handle error cases */
 
 			/* Bandwidth Calculation and display */
-			System.out.println("Message: Performance metrics");
 			System.out.println(c.getBandWidthInfo());
 
 		} else if(args[0].equals("-s")) {
