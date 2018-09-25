@@ -23,7 +23,7 @@ public class Client {
 	int time;
 
 	/* Data Members required for bandwidth calculation */
-	int dataSent;
+	long dataSent;
 	float bandwidth;
 
 	/**
