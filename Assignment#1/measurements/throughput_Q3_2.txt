@@ -1,0 +1,10 @@
+H1 --> H4
+Client
+sent=21832 KB rate=5.0 Mbps
+Server
+received=21832 KB rate=4.0 Mbps
+H7 --> H9
+Client
+sent=12800 KB rate=3.0 Mbps
+Server
+received=12800 KB rate=2.0 Mbps

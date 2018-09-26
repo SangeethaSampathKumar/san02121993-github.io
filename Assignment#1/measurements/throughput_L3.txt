@@ -1,0 +1,4 @@
+Client
+sent=64596 KB rate=17.0 Mbps
+Server
+received=64596 KB rate=14.0 Mbps
