@@ -32,7 +32,7 @@ public class Iperfer {
 
 		if(args.length < 1) {
 			System.out.println("Error: missing or additional arguments");
-			Iperfer.printUsage();
+			//Iperfer.printUsage();
 			System.exit(0);
 		}
 
@@ -59,7 +59,7 @@ public class Iperfer {
 						System.out.println("Error: port number must be in the range 1024 to 65535");
 						break;
 				}
-				Iperfer.printUsage();
+				//Iperfer.printUsage();
 				System.exit(0);
 			}
 
@@ -107,7 +107,7 @@ public class Iperfer {
 						System.out.println("Error: port number must be in the range 1024 to 65535");
 						break;
 				}
-				Iperfer.printUsage();
+				//Iperfer.printUsage();
 				System.exit(0);
 			}
 

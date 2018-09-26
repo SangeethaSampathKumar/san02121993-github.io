@@ -61,7 +61,6 @@ public class Server {
 			sb.append(args[i]);
 		}
 		inputArguments = sb.toString();
-		//System.out.println(inputArguments);
 		/* Regular expression to group the arguments */
 		Pattern p = Pattern.compile("^-s\\s-p\\s(\\d+)$");
 		Matcher m = p.matcher(inputArguments);
@@ -77,7 +76,8 @@ public class Server {
 			return -4;
 		}
 
-		if(portNumber < 1024 || portNumber > 65534)
+		/* Valid Range of Port Numbers : 1024 to 65535, less than 1024 port number are reserved */
+		if(portNumber < 1024 || portNumber > 65535)
 			return -5;
 
 		return 0;

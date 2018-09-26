@@ -79,14 +79,13 @@ public class Client {
 			sb.append(args[i]);
 		}
 		inputArguments = sb.toString();
-		//System.out.println(inputArguments);
 
+		/* Regular expression to group the arguments */
 		Pattern p = Pattern.compile("^-c\\s-h\\s(.*)\\s-p\\s(\\d+)\\s-t\\s(\\d+)$");
 		Matcher m = p.matcher(inputArguments);
 
 		if(m.find()) {
 			this.serverName = m.group(1);
-			// TBD : Server Name Validation
 			try {
 				this.portNumber = Integer.parseInt(m.group(2));
 				this.time = Integer.parseInt(m.group(3));
@@ -98,7 +97,8 @@ public class Client {
 			return -4;
 		}
 
-		if(portNumber < 1024 || portNumber > 65534)
+		/* Valid Range of Port Numbers : 1024 to 65535, less than 1024 port number are reserved */
+		if(portNumber < 1024 || portNumber > 65535)
 			return -5;
 
 		return 0;
@@ -116,7 +116,9 @@ public class Client {
 	 */
 	int establishConnection() {
 		try {
+			/* Creating a client socket object */
 			clientSocket = new Socket(this.serverName, this.portNumber);
+			/* Creating an output stream object and linking it with client socket object to send data to server */
 			outputStream = new DataOutputStream(clientSocket.getOutputStream());
 		} catch(UnknownHostException e) {
 			System.out.println("Error: Unknown host name " + serverName);
@@ -138,7 +140,9 @@ public class Client {
 	 */
 	int closeConnection() {
 		try {
+			/* Closing output stream */
 			outputStream.close();
+			/* Closing client socket */
 			clientSocket.close();
 		} catch(IOException e) {
 			System.out.println("Error: Exception " + e);
