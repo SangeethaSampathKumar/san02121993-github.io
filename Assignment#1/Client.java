@@ -24,7 +24,7 @@ public class Client {
 
 	/* Data Members required for bandwidth calculation */
 	long dataSent;
-	float bandwidth;
+	double bandwidth;
 
 	/**
 	 * Constructor of Class Client
@@ -195,14 +195,16 @@ public class Client {
 	 */
 	String getBandWidthInfo() {
 		String bandwidthInfo;
+		String BWValue;
 
 		/* Expected Bandwidth metric : Mbps - Mega bits per second
 		* Data sent : X KBytes
 		* Bandwidth : X * 8 / 1000 / time -> Megabits per Second
 		* Note : To avoid overflows, divided before converting to bits
 		*/
-		this.bandwidth = ((this.dataSent / 1000) * 8) / this.time;
-		bandwidthInfo = "sent=" + this.dataSent + " KB " + "rate=" + this.bandwidth + " Mbps";
+		this.bandwidth = ((this.dataSent * 1.0 / 1000) * 8) / this.time;
+		BWValue = String.format("%.2f", this.bandwidth);
+		bandwidthInfo = "sent=" + this.dataSent + " KB " + "rate=" + BWValue + " Mbps";
 		return bandwidthInfo;
 	}
 }

@@ -20,7 +20,7 @@ public class Server {
 	int portNumber;
 	long time;
 	long totalKiloBytesReceived;
-	float bandWidth;
+	double bandWidth;
 
 
 	/**
@@ -165,9 +165,12 @@ public class Server {
 	*/
 	String getBandwidthInfo(){
 		String bandWidthInfo;
+		String BWValue;
+
 		/* Calculate bandwidth in Mbps */
-		this.bandWidth = ((this.totalKiloBytesReceived/1000)*8) / this.time;
-		bandWidthInfo = "received=" + this.totalKiloBytesReceived + " KB " + "rate=" + bandWidth + " Mbps";
+		this.bandWidth = ((this.totalKiloBytesReceived * 1.0/1000)*8) / this.time;
+		BWValue = String.format("%.2f", this.bandWidth);
+		bandWidthInfo = "received=" + this.totalKiloBytesReceived + " KB " + "rate=" + BWValue + " Mbps";
 		return bandWidthInfo;
 	}
 }
