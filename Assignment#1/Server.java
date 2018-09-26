@@ -169,7 +169,7 @@ public class Server {
 
 		/* Calculate bandwidth in Mbps */
 		this.bandWidth = ((this.totalKiloBytesReceived * 1.0/1000)*8) / this.time;
-		BWValue = String.format("%.2f", this.bandWidth);
+		BWValue = String.format("%.3f", this.bandWidth);
 		bandWidthInfo = "received=" + this.totalKiloBytesReceived + " KB " + "rate=" + BWValue + " Mbps";
 		return bandWidthInfo;
 	}

@@ -203,7 +203,7 @@ public class Client {
 		* Note : To avoid overflows, divided before converting to bits
 		*/
 		this.bandwidth = ((this.dataSent * 1.0 / 1000) * 8) / this.time;
-		BWValue = String.format("%.2f", this.bandwidth);
+		BWValue = String.format("%.3f", this.bandwidth);
 		bandwidthInfo = "sent=" + this.dataSent + " KB " + "rate=" + BWValue + " Mbps";
 		return bandwidthInfo;
 	}
