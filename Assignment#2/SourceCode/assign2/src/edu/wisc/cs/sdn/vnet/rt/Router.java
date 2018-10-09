@@ -5,7 +5,9 @@ import edu.wisc.cs.sdn.vnet.DumpFile;
 import edu.wisc.cs.sdn.vnet.Iface;
 
 import net.floodlightcontroller.packet.Ethernet;
-
+import net.floodlightcontroller.packet.MACAddress;
+import net.floodlightcontroller.packet.IPv4;
+import java.util.*;
 /**
  * @author Aaron Gember-Jacobson and Anubhavnidhi Abhashkumar
  */
@@ -84,8 +86,80 @@ public class Router extends Device
 		
 		/********************************************************************/
 		/* TODO: Handle packets                                             */
-		
-		
+
+		if(etherPacket.getEtherType() != 0x800) {
+			System.out.println("Not IPv4");
+			return;
+		}
+		System.out.println("My packet");
+		System.out.println(etherPacket.toString());
+		System.out.println("My packet");
+		IPv4 pkt = (IPv4)etherPacket.getPayload();
+	
+		short pktChecksum = pkt.getChecksum();
+		System.out.println("From sender : " + pktChecksum);
+
+		pkt.resetChecksum();
+		System.out.println("At Reset : " + pkt.getChecksum());
+		pkt.serialize();
+		short checksumAtReciever = pkt.getChecksum();
+		System.out.println("At Reciever : " + checksumAtReciever);
+
+		if(pktChecksum != checksumAtReciever) {
+			System.out.println("Checksum mismatch");
+			return;
+		}
+
+		byte currentTTL = pkt.getTtl();
+		currentTTL--;
+		System.out.println("TTL : " + currentTTL);
+		if(currentTTL == 0) {
+			System.out.println("TTL 0");
+			return;
+		}
+		System.out.println(pkt.getTtl());
+		pkt.setTtl(currentTTL);
+		System.out.println(pkt.getTtl());
+		pkt.resetChecksum();
+		System.out.println("checksum: " + pkt.getChecksum());
+		pkt.serialize();
+		System.out.println("checksum22: " + pkt.getChecksum());
+	
+      		System.out.println(pkt.getDestinationAddress());
+		for(Map.Entry<String, Iface> entry: interfaces.entrySet()){
+			System.out.println(entry.getKey() + " " + entry.getValue().getIpAddress());
+			if(pkt.getDestinationAddress()  == entry.getValue().getIpAddress()){
+				System.out.println("Matching Router IP - dropping !");
+				return;
+			}
+		}
+	
+		RouteEntry rEntry = routeTable.lookup(pkt.getDestinationAddress());
+		if(rEntry == null) {
+			System.out.println("No matching interface found - dropping!");
+			return;
+		}
+
+		/* Route Table entries */
+		System.out.println(routeTable.toString());
+
+		/* ARP Cache entried */
+		System.out.println(arpCache.toString());
+
+		/* Find next hop MAC address from ARP Cache */
+		MACAddress destinationMac = arpCache.lookup(pkt.getDestinationAddress()).getMac();
+		/* Find the source MAC of router interface */
+		MACAddress sourceMac = rEntry.getInterface().getMacAddress();
+		System.out.println("source: " + sourceMac.toString() + " desti:" + destinationMac.toString());
+
+		Ethernet newFrame = new Ethernet();
+		newFrame.setDestinationMACAddress(destinationMac.toString());
+		newFrame.setSourceMACAddress(sourceMac.toString());
+		newFrame.setEtherType((short)0x800);
+		newFrame.setPayload(pkt);
+
+		System.out.println(newFrame.toString());
+		sendPacket(newFrame, rEntry.getInterface());
 		/********************************************************************/
 	}
 }

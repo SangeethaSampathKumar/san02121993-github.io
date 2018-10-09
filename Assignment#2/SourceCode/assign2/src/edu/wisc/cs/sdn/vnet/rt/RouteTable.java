@@ -38,14 +38,58 @@ public class RouteTable
 		synchronized(this.entries)
         {
 			/*****************************************************************/
-			/* TODO: Find the route entry with the longest prefix match      */
-			
-			return null;
-			
+			/* DONE: Find the route entry with the longest prefix match      */
+			/* Step 1: Convert ip in int to Binary String 			*/
+			/* Step 2: Iterate through every RouteTable Entry 		*/
+			/* 	For each entry 						*/
+			/*	   -> Convert destIPAddrr in int to Binary String 	*/
+			/*	   -> Get the matching Prefix of destIPAddr & ip	*/
+			/* 	   -> If the current matching prefix if greater the LCP	*/
+			/*	   -> Save the Route Entry & update LCP			*/
+			/* Step 3: Return the Route Entry				*/
+			/* Return value could be null if there is no match		*/
+
+			System.out.println("Lookup start");
+			System.out.println("IP : " + IPv4.fromIPv4Address(ip));
+			String IP = formatIPAddressToBinaryString(ip);
+			int longestMatch = 0;
+			RouteEntry outputRE = null;
+			for(RouteEntry r : entries) {
+				//System.out.println(r.getDestinationAddress() + ":" + r.getGatewayAddress() + ":" + r.getMaskAddress() + ":" + r.getInterface());
+				String entryIP = formatIPAddressToBinaryString(r.getDestinationAddress());
+				int matchingLength = commonPrefixLength(IP, entryIP);
+				if(matchingLength > longestMatch) {
+					longestMatch = matchingLength;
+					outputRE = r;
+					//System.out.println(r.toString());
+				}
+			}
+			System.out.println("Lookup end");
+			if(outputRE != null)
+				System.out.println("LCP : " + outputRE.toString());
+			return outputRE;
 			/*****************************************************************/
         }
 	}
-	
+
+	int commonPrefixLength(String s1, String s2) {
+		int match = 0;
+		for(int i = 0; i < 32; i++) {
+			if(s1.charAt(i) == s2.charAt(i)) {
+				match++;
+			} else {
+				break;
+			}
+		}
+		return match;
+	}
+
+	String formatIPAddressToBinaryString(int inputIP){
+		String binaryString = Integer.toBinaryString(inputIP);
+		binaryString = String.format("%0"+ (32 - binaryString.length() )+"d%s",0 ,binaryString);
+		return binaryString;
+	}
+
 	/**
 	 * Populate the route table from a file.
 	 * @param filename name of the file containing the static route table
