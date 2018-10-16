@@ -49,22 +49,22 @@ public class RouteTable
 			/* Step 3: Return the Route Entry				*/
 			/* Return value could be null if there is no match		*/
 
-			System.out.println("Lookup start");
+			System.out.println("-----------Lookup start-------");
 			System.out.println("IP : " + IPv4.fromIPv4Address(ip));
-			String IP = formatIPAddressToBinaryString(ip);
+			String myIP = formatIPAddressToBinaryString(ip);
 			int longestMatch = 0;
 			RouteEntry outputRE = null;
 			for(RouteEntry r : entries) {
 				//System.out.println(r.getDestinationAddress() + ":" + r.getGatewayAddress() + ":" + r.getMaskAddress() + ":" + r.getInterface());
 				String entryIP = formatIPAddressToBinaryString(r.getDestinationAddress());
-				int matchingLength = commonPrefixLength(IP, entryIP);
+				int matchingLength = commonPrefixLength(myIP, entryIP);
 				if(matchingLength > longestMatch) {
 					longestMatch = matchingLength;
 					outputRE = r;
 					//System.out.println(r.toString());
 				}
 			}
-			System.out.println("Lookup end");
+			System.out.println("--------Lookup end----------");
 			if(outputRE != null)
 				System.out.println("LCP : " + outputRE.toString());
 			return outputRE;

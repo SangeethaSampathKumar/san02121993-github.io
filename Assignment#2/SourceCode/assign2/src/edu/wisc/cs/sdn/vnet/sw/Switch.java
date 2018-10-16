@@ -7,43 +7,9 @@ import edu.wisc.cs.sdn.vnet.DumpFile;
 import edu.wisc.cs.sdn.vnet.Iface;
 import java.util.*;
 
-
 /**
  * @author Aaron Gember-Jacobson
  */
-class ForwardingTable{
-    List<ForwardingTableRecord> fTable;
-    ForwardingTable(){
-        fTable  = new ArrayList<ForwardingTableRecord>();
-    }
-    
-    public void learnForwarding(MACAddress input, Iface intf){
-	System.out.println("Learning");
-
-	if(fTable.size() == 0) {
-		ForwardingTableRecord r = new ForwardingTableRecord(input, intf);
-		fTable.add(r);
-	} else {
-		for(ForwardingTableRecord record: this.fTable){
-			if(record.inputMAC.equals(input)){
-				System.out.println("Found Entry");
-				return;
-			}
-		}
-		ForwardingTableRecord r = new ForwardingTableRecord(input, intf);
-		fTable.add(r);
-	}
-    }
-
-	public Iface getIFaceForMAC(MACAddress inputMAC) {
-		for(ForwardingTableRecord r:fTable) {
-			if(r.inputMAC.equals(inputMAC)) {
-				return r.inIface;
-			}
-		}
-		return null;
-	}
-}
 public class Switch extends Device
 {
 	ForwardingTable ft;
@@ -72,9 +38,6 @@ public class Switch extends Device
 		/* Learing */
 		System.out.println("source mac:" + etherPacket.getSourceMAC());
 		ft.learnForwarding(etherPacket.getSourceMAC(), inIface);
-		for(ForwardingTableRecord r:ft.fTable) {
-			System.out.println(r.inputMAC + " " + r.inIface + " " + r.timeOut);
-		}
 
 		/* Forwarding */
 		System.out.println("dest mac:" + etherPacket.getDestinationMAC());
@@ -94,6 +57,7 @@ public class Switch extends Device
 			System.out.println("Send packet");
 			sendPacket(etherPacket, outIface);
 		}
+		System.out.println(ft);
 		/********************************************************************/
 	}
 }

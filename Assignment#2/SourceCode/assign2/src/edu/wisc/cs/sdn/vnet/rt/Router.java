@@ -86,80 +86,109 @@ public class Router extends Device
 		
 		/********************************************************************/
 		/* TODO: Handle packets                                             */
+		System.out.println("------PACKET PROCESSING START--------");
 
+		MACAddress pktMAC = etherPacket.getDestinationMAC();
+		MACAddress ifaceMAC = inIface.getMacAddress();
+		if(!pktMAC.equals(ifaceMAC)) {
+			System.out.println("Not my packet! Dropping!");
+			return;
+		}
 		if(etherPacket.getEtherType() != 0x800) {
 			System.out.println("Not IPv4");
 			return;
 		}
-		System.out.println("My packet");
 		System.out.println(etherPacket.toString());
-		System.out.println("My packet");
 		IPv4 pkt = (IPv4)etherPacket.getPayload();
-	
-		short pktChecksum = pkt.getChecksum();
-		System.out.println("From sender : " + pktChecksum);
 
+		/* Checksum validation */	
+		short actualCheckSum = pkt.getChecksum();
+		System.out.println("From sender CS : " + actualCheckSum);
 		pkt.resetChecksum();
-		System.out.println("At Reset : " + pkt.getChecksum());
+		System.out.println("At Reset CS : " + pkt.getChecksum());
 		pkt.serialize();
-		short checksumAtReciever = pkt.getChecksum();
-		System.out.println("At Reciever : " + checksumAtReciever);
-
-		if(pktChecksum != checksumAtReciever) {
+		short currentChecksum = pkt.getChecksum();
+		System.out.println("At Reciever CS : " + currentChecksum);
+		if(actualCheckSum != currentChecksum) {
 			System.out.println("Checksum mismatch");
 			return;
 		}
 
+		/* TTL Validation */
 		byte currentTTL = pkt.getTtl();
+		System.out.println("Prev TTL : " + currentTTL);
 		currentTTL--;
-		System.out.println("TTL : " + currentTTL);
+		System.out.println("Current TTL : " + currentTTL);
 		if(currentTTL == 0) {
 			System.out.println("TTL 0");
 			return;
 		}
-		System.out.println(pkt.getTtl());
+
+		/* Updating Packet : New TTL & Checksum */
+		System.out.println("Current TTL : " + pkt.getTtl());
 		pkt.setTtl(currentTTL);
-		System.out.println(pkt.getTtl());
+		System.out.println("Updated TTL : " + pkt.getTtl());
 		pkt.resetChecksum();
-		System.out.println("checksum: " + pkt.getChecksum());
+		System.out.println("Before TTL update CS: " + pkt.getChecksum());
 		pkt.serialize();
-		System.out.println("checksum22: " + pkt.getChecksum());
-	
-      		System.out.println(pkt.getDestinationAddress());
+		System.out.println("After TTL update CS : " + pkt.getChecksum());
+
+		/* Idnetify if packet is destined for router interface IP Address */
+      		System.out.println("PKT Destination IP : " + pkt.getDestinationAddress());
 		for(Map.Entry<String, Iface> entry: interfaces.entrySet()){
-			System.out.println(entry.getKey() + " " + entry.getValue().getIpAddress());
+			//System.out.println(entry.getKey() + " " + entry.getValue().getIpAddress());
 			if(pkt.getDestinationAddress()  == entry.getValue().getIpAddress()){
 				System.out.println("Matching Router IP - dropping !");
 				return;
 			}
 		}
-	
+
+		/* Frowarding Packets */	
 		RouteEntry rEntry = routeTable.lookup(pkt.getDestinationAddress());
 		if(rEntry == null) {
-			System.out.println("No matching interface found - dropping!");
+			System.out.println("No matching LCP interface found - dropping!");
 			return;
 		}
 
 		/* Route Table entries */
 		System.out.println(routeTable.toString());
-
 		/* ARP Cache entried */
 		System.out.println(arpCache.toString());
+		/**new code */
+		int nextHopIPAddress = rEntry.getGatewayAddress();
+		if(nextHopIPAddress == 0){
+			nextHopIPAddress = pkt.getDestinationAddress();
+		}
 
+		/**new code end */
 		/* Find next hop MAC address from ARP Cache */
-		MACAddress destinationMac = arpCache.lookup(pkt.getDestinationAddress()).getMac();
+		/* Checking non-existent Host in any network connected to Router */
+		ArpEntry ae = arpCache.lookup(nextHopIPAddress);
+		if(ae == null) {
+			System.out.println("Invalid IP Address : 404");
+			return;
+		}
+		MACAddress destinationMac = ae.getMac();
 		/* Find the source MAC of router interface */
 		MACAddress sourceMac = rEntry.getInterface().getMacAddress();
-		System.out.println("source: " + sourceMac.toString() + " desti:" + destinationMac.toString());
+		if(destinationMac.equals(sourceMac)){
+			System.out.println("Same Interfce - Dropping packet!!!");
+			return;
+		}
+		System.out.println("PKT Source MAC : " + sourceMac.toString() + "\nPKT Dest MAC : " + destinationMac.toString());
 
-		Ethernet newFrame = new Ethernet();
-		newFrame.setDestinationMACAddress(destinationMac.toString());
-		newFrame.setSourceMACAddress(sourceMac.toString());
-		newFrame.setEtherType((short)0x800);
-		newFrame.setPayload(pkt);
+		/* Construct Ethernet Pakcet to send */
+		//Ethernet newFrame = new Ethernet();
+		etherPacket.setDestinationMACAddress(destinationMac.toString());
+		etherPacket.setSourceMACAddress(sourceMac.toString());
+		//newFrame.setEtherType((short)0x0800);
+		//newFrame.setPayload(pkt);
 
-		System.out.println(newFrame.toString());
-		sendPacket(newFrame, rEntry.getInterface());
+		System.out.println(etherPacket.toString());
+
+		/* Send Packet on the interface found from Route Table */
+		sendPacket(etherPacket, rEntry.getInterface());
+		System.out.println("------------PACKET SENT-------------");
 		/********************************************************************/
 	}
 }

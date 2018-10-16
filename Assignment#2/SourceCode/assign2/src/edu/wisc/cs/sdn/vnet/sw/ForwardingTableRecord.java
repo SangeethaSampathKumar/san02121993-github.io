@@ -15,6 +15,13 @@ class ForwardingTableRecord {
 		this.inputMAC = inputMAC;
 		this.inIface = inIface;
 		this.timeOut = 15;
-		this.startTime = System.nanoTime();
+		this.startTime = System.currentTimeMillis();
+	}
+
+	public String toString() {
+		return String.format("%s\t%s\t%d\t%d",
+				this.inputMAC.toString(),
+				this.inIface.getName(),
+				this.timeOut, this.startTime);
 	}
 }
