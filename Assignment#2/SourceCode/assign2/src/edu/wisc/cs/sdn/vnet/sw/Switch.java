@@ -34,30 +34,33 @@ public class Switch extends Device
                 etherPacket.toString().replace("\n", "\n\t"));
 		
 		/********************************************************************/
-		/* TODO: Handle packets                                             */
-		/* Learing */
-		System.out.println("source mac:" + etherPacket.getSourceMAC());
+		/* Learing MAC Address and its Interface */
+		//System.out.println("source mac:" + etherPacket.getSourceMAC());
 		ft.learnForwarding(etherPacket.getSourceMAC(), inIface);
 
-		/* Forwarding */
-		System.out.println("dest mac:" + etherPacket.getDestinationMAC());
+		/* Forwarding packets to the correct Interface */
+		//System.out.println("dest mac:" + etherPacket.getDestinationMAC());
 		Iface outIface = ft.getIFaceForMAC(etherPacket.getDestinationMAC());
 		if(outIface == null) {
-			System.out.println("Broadcast packet");
+			/* If no matching entry of MAC address in Forwarind Table,
+			 * broadcast the packet on every interface (Except Incomming
+			 * Interface) */
+			//System.out.println("Broadcast packet");
 			for(Map.Entry<String,Iface> entry: interfaces.entrySet()) {
 				if(entry.getKey().equals(inIface.getName())) {
-					System.out.println("Input interface");
+					//System.out.println("Input interface");
+					/* Move to next entry */
 				} else {
-					System.out.println("Send packet : " + entry.getKey());
+					//System.out.println("Send packet : " + entry.getKey());
 					sendPacket(etherPacket, entry.getValue());
 				}
 				//System.out.println(entry.getKey() + " " + entry.getValue());
 			}
 		} else {
-			System.out.println("Send packet");
+			//System.out.println("Send packet");
 			sendPacket(etherPacket, outIface);
 		}
-		System.out.println(ft);
+		//System.out.println(ft);
 		/********************************************************************/
 	}
 }

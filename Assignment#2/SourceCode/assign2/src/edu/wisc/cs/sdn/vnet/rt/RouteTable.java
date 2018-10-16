@@ -36,9 +36,9 @@ public class RouteTable
 	public RouteEntry lookup(int ip)
 	{
 		synchronized(this.entries)
-        {
+		{
 			/*****************************************************************/
-			/* DONE: Find the route entry with the longest prefix match      */
+			/* Find the route entry with the longest prefix match      	*/
 			/* Step 1: Convert ip in int to Binary String 			*/
 			/* Step 2: Iterate through every RouteTable Entry 		*/
 			/* 	For each entry 						*/
@@ -49,11 +49,12 @@ public class RouteTable
 			/* Step 3: Return the Route Entry				*/
 			/* Return value could be null if there is no match		*/
 
-			System.out.println("-----------Lookup start-------");
-			System.out.println("IP : " + IPv4.fromIPv4Address(ip));
+			//System.out.println("-----------Lookup start-------");
+			//System.out.println("IP : " + IPv4.fromIPv4Address(ip));
 			String myIP = formatIPAddressToBinaryString(ip);
 			int longestMatch = 0;
 			RouteEntry outputRE = null;
+			/* For each entry in Route Table, if there is a matching LCP IP address */
 			for(RouteEntry r : entries) {
 				//System.out.println(r.getDestinationAddress() + ":" + r.getGatewayAddress() + ":" + r.getMaskAddress() + ":" + r.getInterface());
 				String entryIP = formatIPAddressToBinaryString(r.getDestinationAddress());
@@ -64,12 +65,12 @@ public class RouteTable
 					//System.out.println(r.toString());
 				}
 			}
-			System.out.println("--------Lookup end----------");
-			if(outputRE != null)
-				System.out.println("LCP : " + outputRE.toString());
+			//System.out.println("--------Lookup end----------");
+			//if(outputRE != null)
+			//	System.out.println("LCP : " + outputRE.toString());
 			return outputRE;
 			/*****************************************************************/
-        }
+		}
 	}
 
 	int commonPrefixLength(String s1, String s2) {
@@ -84,6 +85,7 @@ public class RouteTable
 		return match;
 	}
 
+	/* Convert IP Address in Int to String of Length 32 */
 	String formatIPAddressToBinaryString(int inputIP){
 		String binaryString = Integer.toBinaryString(inputIP);
 		binaryString = String.format("%0"+ (32 - binaryString.length() )+"d%s",0 ,binaryString);
