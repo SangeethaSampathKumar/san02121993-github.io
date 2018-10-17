@@ -89,7 +89,6 @@ public class Router extends Device
 
 		/* CHECK 1 : Ethernet Packet */
 		if(etherPacket.getEtherType() != 0x800) {
-			//System.out.println("Not IPv4");
 			/* Not IP Packet - Dropping */
 			return;
 		}
@@ -101,7 +100,6 @@ public class Router extends Device
 		pkt.serialize();
 		short currentChecksum = pkt.getChecksum();
 		if(actualCheckSum != currentChecksum) {
-			//System.out.println("Checksum mismatch");
 			/* Checksum mismatch - Dropping */
 			return;
 		}
@@ -110,7 +108,6 @@ public class Router extends Device
 		byte currentTTL = pkt.getTtl();
 		currentTTL--;
 		if(currentTTL == 0) {
-			//System.out.println("TTL 0");
 			/* TTL 0 - Dropping */
 			return;
 		}
@@ -121,11 +118,8 @@ public class Router extends Device
 		pkt.serialize();
 
 		/* CHECK 4 : Is packet destined for router interface IP Address */
-      		//System.out.println("PKT Destination IP : " + pkt.getDestinationAddress());
 		for(Map.Entry<String, Iface> entry: interfaces.entrySet()){
-			//System.out.println(entry.getKey() + " " + entry.getValue().getIpAddress());
 			if(pkt.getDestinationAddress() == entry.getValue().getIpAddress()){
-				//System.out.println("Matching Router IP - dropping !");
 				/* Packet Destined for Routers IP - Dropping */
 				return;
 			}
@@ -135,22 +129,16 @@ public class Router extends Device
 		/* STEP 1 : Route Table Look up */
 		RouteEntry rEntry = routeTable.lookup(pkt.getDestinationAddress());
 		if(rEntry == null) {
-			//System.out.println("No matching LCP interface found - dropping!");
 			/* No matching route table entry */
 			return;
 		}
 
 		/* CHECK 5 : Check if incoming and outgoing interfaces are same */
 		if(inIface.getName().equals(rEntry.getInterface().getName())){
-                         //System.out.println("Same Interface - Dropping packet!!!");
 			/* Incoming Interface is same as outgoing interface - dropping */
                          return;
                  }
 
-		/* Route Table entries */
-		//System.out.println(routeTable.toString());
-		/* ARP Cache entried */
-		//System.out.println(arpCache.toString());
 		/* STEP 2 : Find the next hop IP Address */
 		int nextHopIPAddress = rEntry.getGatewayAddress();
 		if(nextHopIPAddress == 0){
@@ -161,7 +149,6 @@ public class Router extends Device
 		/* CHECK 6 : Checking non-existent Host in any network connected to Router */
 		ArpEntry ae = arpCache.lookup(nextHopIPAddress);
 		if(ae == null) {
-			//System.out.println("Invalid IP Address : 404");
 			/* No such host in the network - Dropping */
 			return;
 		}
@@ -171,15 +158,9 @@ public class Router extends Device
 		/* Outgoing router Interface MAC address */
 		MACAddress sourceMac = rEntry.getInterface().getMacAddress();
 
-		//System.out.println("PKT Source MAC : " + sourceMac.toString() + "\nPKT Dest MAC : " + destinationMac.toString());
-
 		/* STEP 3 : Update Ethernet Pakcet to send */
 		etherPacket.setDestinationMACAddress(destinationMac.toString());
 		etherPacket.setSourceMACAddress(sourceMac.toString());
-		
-		//IPv4 pktFinal = (IPv4)etherPacket.getPayload();
-		//System.out.println("CS : " + pktFinal.getChecksum());
-		//System.out.println("TTL : " + pktFinal.getTtl());
 		
 		/* Send Packet on the interface found from Route Table */
 		sendPacket(etherPacket, rEntry.getInterface());

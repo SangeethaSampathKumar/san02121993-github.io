@@ -15,7 +15,6 @@ public class ForwardingTable extends Thread {
 	}
 
 	public void learnForwarding(MACAddress input, Iface intf){
-		//System.out.println("*** MAC table Learning ***");
 
 		synchronized(this.fTable) {
 		/* When the table is empty */
@@ -27,7 +26,6 @@ public class ForwardingTable extends Thread {
 				/* When there is a matching record, reset the start time */
 				if(record.inputMAC.equals(input)){
 					record.startTime = System.currentTimeMillis();
-					//System.out.println("Found entry updating time : " + record.inputMAC);
 					return;
 				}
 			}

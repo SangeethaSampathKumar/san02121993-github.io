@@ -35,32 +35,24 @@ public class Switch extends Device
 		
 		/********************************************************************/
 		/* Learing MAC Address and its Interface */
-		//System.out.println("source mac:" + etherPacket.getSourceMAC());
 		ft.learnForwarding(etherPacket.getSourceMAC(), inIface);
 
 		/* Forwarding packets to the correct Interface */
-		//System.out.println("dest mac:" + etherPacket.getDestinationMAC());
 		Iface outIface = ft.getIFaceForMAC(etherPacket.getDestinationMAC());
 		if(outIface == null) {
 			/* If no matching entry of MAC address in Forwarind Table,
 			 * broadcast the packet on every interface (Except Incomming
 			 * Interface) */
-			//System.out.println("Broadcast packet");
 			for(Map.Entry<String,Iface> entry: interfaces.entrySet()) {
 				if(entry.getKey().equals(inIface.getName())) {
-					//System.out.println("Input interface");
 					/* Move to next entry */
 				} else {
-					//System.out.println("Send packet : " + entry.getKey());
 					sendPacket(etherPacket, entry.getValue());
 				}
-				//System.out.println(entry.getKey() + " " + entry.getValue());
 			}
 		} else {
-			//System.out.println("Send packet");
 			sendPacket(etherPacket, outIface);
 		}
-		//System.out.println(ft);
 		/********************************************************************/
 	}
 }
