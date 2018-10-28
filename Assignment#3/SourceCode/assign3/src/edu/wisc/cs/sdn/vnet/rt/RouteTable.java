@@ -49,10 +49,13 @@ public class RouteTable
 			/* Step 3: Return the Route Entry				*/
 			/* Return value could be null if there is no match		*/
 
+			/*
 			String myIP = formatIPAddressToBinaryString(ip);
 			int longestMatch = 0;
 			RouteEntry outputRE = null;
+			*/
 			/* For each entry in Route Table, if there is a matching LCP IP address */
+			/*
 			for(RouteEntry r : entries) {
 				String entryIP = formatIPAddressToBinaryString(r.getDestinationAddress());
 				int matchingLength = commonPrefixLength(myIP, entryIP);
@@ -62,6 +65,23 @@ public class RouteTable
 				}
 			}
 			return outputRE;
+			*/
+			RouteEntry bestMatch = null;
+			for (RouteEntry entry : this.entries)
+			{
+				int maskedDst = ip & entry.getMaskAddress();
+				int entrySubnet = entry.getDestinationAddress()
+				& entry.getMaskAddress();
+				if (maskedDst == entrySubnet)
+				{
+					if ((null == bestMatch)
+					|| (entry.getMaskAddress() > bestMatch.getMaskAddress()))
+					{ bestMatch = entry; }
+				}
+			}
+
+			return bestMatch;
+
 			/*****************************************************************/
 		}
 	}
