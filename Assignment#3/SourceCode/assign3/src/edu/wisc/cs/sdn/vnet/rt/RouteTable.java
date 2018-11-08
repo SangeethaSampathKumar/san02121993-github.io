@@ -35,6 +35,7 @@ public class RouteTable
 	 */
 	public RouteEntry lookup(int ip)
 	{
+		//System.out.println(this.toString());
 		synchronized(this.entries)
 		{
 			/*****************************************************************/
