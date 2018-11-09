@@ -215,48 +215,60 @@ public class Router extends Device
 					}
 					return;
 				} else {
-					/* RIP Unicast */
-					sendRIPPacketUnicast((byte)2, pkt.getSourceAddress(), etherPacket.getSourceMAC(), inIface);
-
-					/* RIP Request/Response Packet */
-					/* Check if there are any updates */
-					/* Refresh DV Entry */
-					/*
-					boolean match = false, updated = false;
-					RIPv2 ripPkt = (RIPv2)udpPkt.getPayload();
-
-					System.out.println("RIP Entries");
-					System.out.println(ripPkt);
-					synchronized(this.distanceVectorTable) {
-					for(RIPv2Entry ripEntry : ripPkt.getEntries()) {
-						match = false;
-						for(DistanceVectorEntry dvEntry : distanceVectorTable.DVTable) {
-							if(dvEntry.IPAddress == ripEntry.getAddress()) {
-								dvEntry.updateTime();
-								match = true;
-								if(dvEntry.distance > (ripEntry.getMetric() + 1)) {
-									updated = true;
-									dvEntry.distance = ripEntry.getMetric() + 1;
-									routeTable.update(dvEntry.IPAddress, ripEntry.getSubnetMask(), pkt.getSourceAddress(), inIface);
-								} else {
-									System.out.println("Matching IP found but no update");
-								}
-							}
-						}
-						if(match == false) {
-							System.out.println("New entry");
-							updated = true;
-							DistanceVectorEntry newDVEntry = new DistanceVectorEntry(ripEntry.getAddress(), ripEntry.getMetric()+1, 1);
-							distanceVectorTable.addDVTableEntry(newDVEntry);
-							DVEntryTOThreadImpl TOThreadObj = new DVEntryTOThreadImpl(newDVEntry);
-							Thread TOThread = new Thread(TOThreadObj);
-							TOThread.start();
-							routeTable.insert(ripEntry.getAddress(), pkt.getSourceAddress(), ripEntry.getSubnetMask(), inIface);
+					boolean isRouterIP = false;
+					for(Map.Entry<String, Iface> entry: interfaces.entrySet()) {
+						if(pkt.getDestinationAddress() == entry.getValue().getIpAddress()) {
+							isRouterIP = true;
+							break;
 						}
 					}
-					}*/
-					return;
+					if(isRouterIP == true) {
+							/* RIP Request/Response Packet */
+							/* Check if there are any updates */
+							/* Refresh DV Entry */
+							boolean match = false, updated = false;
+							RIPv2 ripPkt = (RIPv2)udpPkt.getPayload();
+
+							System.out.println("RIP Entries");
+							System.out.println(ripPkt);
+							synchronized(this.distanceVectorTable) {
+							for(RIPv2Entry ripEntry : ripPkt.getEntries()) {
+								match = false;
+								for(DistanceVectorEntry dvEntry : distanceVectorTable.DVTable) {
+									if(dvEntry.IPAddress == ripEntry.getAddress()) {
+										dvEntry.updateTime();
+										match = true;
+										if(dvEntry.distance > (ripEntry.getMetric() + 1)) {
+											updated = true;
+											dvEntry.distance = ripEntry.getMetric() + 1;
+											routeTable.update(dvEntry.IPAddress, ripEntry.getSubnetMask(), pkt.getSourceAddress(), inIface);
+										} else {
+											System.out.println("Matching IP found but no update");
+										}
+									}
+								}
+								if(match == false) {
+									System.out.println("New entry");
+									updated = true;
+									DistanceVectorEntry newDVEntry = new DistanceVectorEntry(ripEntry.getAddress(), ripEntry.getMetric()+1, 1);
+									distanceVectorTable.addDVTableEntry(newDVEntry);
+									DVEntryTOThreadImpl TOThreadObj = new DVEntryTOThreadImpl(newDVEntry);
+									Thread TOThread = new Thread(TOThreadObj);
+									TOThread.start();
+									routeTable.insert(ripEntry.getAddress(), pkt.getSourceAddress(), ripEntry.getSubnetMask(), inIface);
+								}
+							}
+							}
+							if(updated == true) {
+								sendRIPPacket((byte)2);
+							}
+							/* RIP Unicast */
+							//sendRIPPacketUnicast((byte)2, pkt.getSourceAddress(), etherPacket.getSourceMAC(), inIface);
+							return;
+					}
+					/* Not destinerd for Router IP */
 				}
+				/* Not a Multicast Address */
 			} else {
 				/* Not a RIP */
 			}
