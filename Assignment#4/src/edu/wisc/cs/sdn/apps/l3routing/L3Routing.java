@@ -62,7 +62,7 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 	// Bellman Ford Table : Mapping between switches with respect to shortest path
 	private HashMap<String, HashMap<String, String>> bellFordTable;
 
-	// Rule Table : IP <-> Output port mapping
+	// Rule Table : IP <-> Output port mapping - Local Datastructure
 	private HashMap<String, HashMap<Integer, Integer>> ruleTable;
 
 	/**
@@ -97,18 +97,24 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 		this.deviceProv.addListener(this);
 		
 		/*********************************************************************/
-		/* TODO: Initialize variables or perform startup tasks, if necessary */
-		System.out.println("Cretating object for network graph");
+		/* TODO[DONE]: Initialize variables or perform startup tasks, if necessary */
+		// Initializing Graph which tracks the network topology
 		graph = new NetworkGraph(0, 0);
+
+		// Initializing ruleTable which tracks IP - Out port for every switch
 		ruleTable = new HashMap<String, HashMap<Integer, Integer>>();
 
+		// Updates the network topology
+		// Has no-effect since the network toplogy is empty
+		// Added to check if there was a instance running before starting floodlight
 		updateNetworkTopology();
-		System.out.println("Get bellmanford over network topology");
-		getCurrentHosts();
 
+		// Runs BellmanFord algorithm and return shortest path table
 		bellFordTable = graph.runBellmanFord();
+		// Converts Shortest Path to IP <-> out port mapping if there are hosts in the network
 		updateRuleTable();
 
+		// Installs all the computed rules into the SDN switches as OpenFlow rules
 		installRulesInSwitches();
 		System.out.println("Completed Initializing task");
 		/*********************************************************************/
@@ -133,11 +139,10 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 	public void updateRuleTableForHost(Host h) {
 			// If a host is not attached to a switch, ignore the switch
 			if(!h.isAttachedToSwitch()) {
-				System.out.println("Not attached to sw");
+				//System.out.println("Not attached to sw");
 				return;
 			}
 
-			System.out.println("IP : " + h.getIPv4Address());
 			String switchName = "s" + String.valueOf(h.getSwitch().getId());
 			for(String sw : bellFordTable.keySet()) {
 				HashMap<String, String> e = bellFordTable.get(sw);
@@ -154,7 +159,7 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 					}
 				}
 				else {
-					System.out.println(sw + " doesnt contain " + switchName);
+					//System.out.println(sw + " doesnt contain " + switchName);
 				}
 			}
 			if(ruleTable.containsKey(switchName)) {
@@ -168,12 +173,13 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 			}
 	}
 
+	// Function which converts Shortest Path to IP <-> out port mapping if there are hosts in the network
+	// ruleTable is updated at the end of this function
 	public void updateRuleTable() {
 		ruleTable = new HashMap<String, HashMap<Integer, Integer>>();
 		Collection<Host> hosts = getHosts();
-		System.out.println("Size : " + hosts.size());
 		if(hosts.size() == 0) {
-			System.out.println("No hosts in network");
+			//System.out.println("No hosts in network");
 			return;
 		}
 
@@ -193,6 +199,7 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 		System.out.println("------------------------------");
 	}
 
+	// Function updates ruleTable by removing entries for a particular IP
 	public void removeRuleFromRuleTable(int IPAddress) {
 		for(String switchName : ruleTable.keySet()) {
 			HashMap<Integer, Integer> rules = ruleTable.get(switchName);
@@ -201,6 +208,7 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 		}
 	}
 
+	// Function removes Open Flow rules from every switch for an IP Address
 	public void removeRuleForHost(int IPAddress) {
 		Map<Long, IOFSwitch> switches = getSwitches();
 
@@ -215,35 +223,44 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 		}
 	}
 
+	// Function which install rules in all SDN Switches with respect to the computed
+	// ruletable using Bellman ford algorithm
 	public void installRulesInSwitches() {
 
-		// TODO: What happens if i apply the same rule again in the SW??
-
 		if(bellFordTable.isEmpty()) {
-			System.out.println("No rules to apply");
+			//System.out.println("No rules to apply");
+			return;
 		}
 
 		for(String s : ruleTable.keySet()) {
 			Map<Long, IOFSwitch> switches = getSwitches();
 			IOFSwitch currSwitch = null;
+			boolean foundSwitch = false;
 			for(Long i : switches.keySet()) {
 				String currSwitchName = "s" + switches.get(i).getId();
 				if(currSwitchName.equals(s)) {
 					currSwitch = switches.get(i);
+					foundSwitch = true;
 					break;
 				}
 			}
+
+			if(foundSwitch == false)
+				continue;
+
 			HashMap<Integer, Integer> entries = ruleTable.get(s);
 			if(entries == null || entries.size() == 0)
 				continue;
 
-			System.out.println("Installing rules for s" + currSwitch.getId());
+			//System.out.println("Installing rules for s" + currSwitch.getId());
 			for(Integer ip : entries.keySet()) {
 				int port = entries.get(ip);
+				//System.out.println(fromIPv4Address(ip) + ":" + port);
 
 				OFMatch match = new OFMatch();
 				match.setDataLayerType((short)0x800);
-				match.setNetworkDestination(ip);
+				match.setField(OFOXMFieldType.IPV4_DST, ip);
+				//match.setNetworkDestination(ip);
 
 				OFActionOutput OFOut = new OFActionOutput();
 				OFOut.setPort(port);
@@ -253,9 +270,11 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 				List<OFInstruction> instr = new ArrayList<OFInstruction>();
 				instr.add(action);
 
-				boolean ret = SwitchCommands.installRule(currSwitch, table, (short)10, match, instr, (short)0, (short)0, 0);
-				System.out.println("Return Value : " + ret);
-				System.out.println(fromIPv4Address(ip) + " : eth" + port);
+				// Install Open Flow rules to foward packets
+				boolean ret = SwitchCommands.installRule(currSwitch, table, SwitchCommands.DEFAULT_PRIORITY,
+									match, instr, SwitchCommands.NO_TIMEOUT, SwitchCommands.NO_TIMEOUT, OFPacketOut.BUFFER_ID_NONE);
+				//System.out.println("Return Value : " + ret);
+				//System.out.println(fromIPv4Address(ip) + " : eth" + port);
 				//System.out.println(currSwitch.getId() + " : " + ip + " : " + port);
 			}
 		}
@@ -273,7 +292,7 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 				this.graph.addVertex(switchName);
 			}
 		} else {
-			System.out.println("No switches in the network");
+//			System.out.println("No switches in the network");
 		}
 
 		if(!currentLinks.isEmpty()) {
@@ -285,7 +304,7 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 				}
 			}
 		} else {
-			System.out.println("No links in the network");
+//			System.out.println("No links in the network");
 		}
 	}
 	
@@ -324,8 +343,15 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 			this.knownHosts.put(device, host);
 			
 			/*****************************************************************/
-			/* TODO: Update routing: add rules to route to new host          */
+			/* TODO[DONE]: Update routing: add rules to route to new host          */
+			/* For every host addition, the local ruleTable is updated using the 
+			 * bellmanford table for that host*/
+			if(bellFordTable.isEmpty())
+				bellFordTable = graph.runBellmanFord();
+
 			updateRuleTableForHost(host);
+
+			/* Updated rules are installed in the switches */
 			installRulesInSwitches();
 			/*****************************************************************/
 		}
@@ -338,7 +364,6 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 	@Override
 	public void deviceRemoved(IDevice device) 
 	{
-		System.out.println("Device removed");
 		Host host = this.knownHosts.get(device);
 		if (null == host)
 		{ return; }
@@ -348,9 +373,13 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 				host.getName()));
 		
 		/*********************************************************************/
-		/* TODO: Update routing: remove rules to route to host               */
-		System.out.println("Removing rules & route talbe intries" + fromIPv4Address(host.getIPv4Address()));
+		/* TODO[DONE]: Update routing: remove rules to route to host               */
+		System.out.println("Removing rules & route talbe intries : " + fromIPv4Address(host.getIPv4Address()));
+
+		/* Update the ruleTable for that particular host */
 		removeRuleForHost(host.getIPv4Address());
+
+		/* Remove flow table rules from every switch */
 		removeRuleFromRuleTable(host.getIPv4Address()); 
 		/*********************************************************************/
 	}
@@ -362,7 +391,6 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 	@Override
 	public void deviceMoved(IDevice device) 
 	{
-		System.out.println("Device moved");
 		Host host = this.knownHosts.get(device);
 		if (null == host)
 		{
@@ -372,7 +400,6 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 		
 		if (!host.isAttachedToSwitch())
 		{
-			System.out.println("Im not attached to swtich");
 			this.deviceRemoved(device);
 			return;
 		}
@@ -380,11 +407,12 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 				host.getSwitch().getId(), host.getPort()));
 		
 		/*********************************************************************/
-		/* TODO: Update routing: change rules to route to host               */
+		/* TODO[DONE]: Update routing: change rules to route to host               */
+		/* Similar to host addition but triggered when a host goes down and comes up */
 		System.out.println("Updating rules " + host.getName());
+
 		updateRuleTableForHost(host);
 		installRulesInSwitches();
-		
 		/*********************************************************************/
 	}
 	
@@ -400,10 +428,13 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 		log.info(String.format("Switch s%d added", switchId));
 		
 		/*********************************************************************/
-		/* TODO: Update routing: change routing rules for all hosts          */
+		/* TODO[DONE]: Update routing: change routing rules for all hosts          */
+
+		// Add vertex as s<Switch ID> in the network graph
+		// Since a link may not be created when a switch is added, no further 
+		// computation is required at this stage
 		String vertexName = "s" + sw.getId();
 		graph.addVertex(vertexName);
-		graph.printGraph();
 		/*********************************************************************/
 	}
 
@@ -414,16 +445,17 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 	@Override
 	public void switchRemoved(long switchId) 
 	{
-		System.out.println("Switch removed");
 		IOFSwitch sw = this.floodlightProv.getSwitch(switchId);
 		log.info(String.format("Switch s%d removed", switchId));
 		
 		/*********************************************************************/
-		/* TODO: Update routing: change routing rules for all hosts          */
-		/* 1. Remove host attached to switches */
+		/* TODO[DONE]: Update routing: change routing rules for all hosts          */
+		/* Update the network topology */
 		String vertexName = "s" + switchId;
 		graph.removeVertex(vertexName);
+		graph.clearEdgesOfVertex(vertexName);
 
+		/* Remove rules corresponding to all hosts attached to remoevd Switch */ 
 		/* Get list of Hosts connected to switch */
 		Collection<Host> hosts = getHosts();
 		List<Host> listOfAttachedHosts = new LinkedList<Host>();
@@ -433,24 +465,26 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 				listOfAttachedHosts.add(h);
 			}
 		}
+
+		/* Update Rule Table Data Structure */
 		for(Host h: listOfAttachedHosts) {
 			removeRuleFromRuleTable(h.getIPv4Address());
 		}
+
+		/* Remove Open Flow rules in every swtich for all the removed hosts */
 		for(Host h: listOfAttachedHosts) {
 			removeRuleForHost(h.getIPv4Address());
 		}
 
-		// Run bellman ford algorithm
+		/* Now that a switch is remoed, there can be other paths associated for
+		   the hosts attached to the switches */
+		/* Compute Bellman Ford again since the topology has changed */
 		bellFordTable = graph.runBellmanFord();
-		System.out.println("BF table");
-		System.out.println(bellFordTable);
 
-		// Update rule table
+		// Update rule table with respect to new topology
 		updateRuleTable();
-		System.out.println("Rule Table");
-		System.out.println(ruleTable);
 
-		// Install Rules
+		// Install Rules for all the hosts in the networks in each switch
 		installRulesInSwitches();
 		/*********************************************************************/
 	}
@@ -462,7 +496,6 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 	@Override
 	public void linkDiscoveryUpdate(List<LDUpdate> updateList) 
 	{
-		System.out.println("Link updated");
 		boolean isSwitchLinkUpdate = false;
 		for (LDUpdate update : updateList)
 		{
@@ -472,9 +505,6 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 			{
 				log.info(String.format("Link s%s:%d -> host updated", 
 					update.getSrc(), update.getSrcPort()));
-				//System.out.println();
-				//updateRuleTableForHost(host);
-				//installRulesInSwitches();
 			}
 			// Otherwise, the link is between two switches
 			else
@@ -482,54 +512,44 @@ public class L3Routing implements IFloodlightModule, IOFSwitchListener,
 				log.info(String.format("Link s%s:%d -> s%s:%d updated", 
 					update.getSrc(), update.getSrcPort(),
 					update.getDst(), update.getDstPort()));
-				System.out.println(update.getOperation());
+
 				String u = "s" + update.getSrc();
 				String v = "s" + update.getDst();
 				if(update.getOperation().toString().equals("Link Updated")) {
+					/* Case 1: Switch link added after a switch is added */
+					/* So, change in topology and hence recompute bellman ford for and update rules */
 					graph.addEdge(u, v, update.getSrcPort(), update.getDstPort());
 					isSwitchLinkUpdate = true;
 				} else if(update.getOperation().toString().equals("Link Removed")) {
+					/* Case 2: Link is removed before a switch is removed */
 					graph.removeEdge(u, v);
+					isSwitchLinkUpdate = true;
 				}
 			}
 		}
 
 
 		/*********************************************************************/
-		/* TODO: Update routing: change routing rules for all hosts          */
+		/* TODO[DONE]: Update routing: change routing rules for all hosts          */
 		if(isSwitchLinkUpdate) {
-			this.graph.printGraph();
 			bellFordTable = graph.runBellmanFord();
-			System.out.println("BF table");
-			System.out.println(bellFordTable);
 			updateRuleTable();
-			System.out.println("Rule Table");
-			System.out.println(ruleTable);
 			installRulesInSwitches();
 		}
 		/*********************************************************************/
 	}
 
+	// Function which converts int ip address to IP Address format */
 	public static String fromIPv4Address(int ipAddress) {
-
         StringBuffer sb = new StringBuffer();
-
         int result = 0;
-
         for (int i = 0; i < 4; ++i) {
-
             result = (ipAddress >> ((3-i)*8)) & 0xff;
-
             sb.append(Integer.valueOf(result).toString());
-
             if (i != 3)
-
                 sb.append(".");
-
         }
-
         return sb.toString();
-
     }
 
 	/**

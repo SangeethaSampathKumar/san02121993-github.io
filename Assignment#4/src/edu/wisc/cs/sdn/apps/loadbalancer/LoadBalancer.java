@@ -3,17 +3,24 @@ package edu.wisc.cs.sdn.apps.loadbalancer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.*;
 
 import org.openflow.protocol.OFMessage;
 import org.openflow.protocol.OFPacketIn;
 import org.openflow.protocol.OFType;
+import org.openflow.protocol.*;
+import org.openflow.protocol.instruction.*;
+import org.openflow.protocol.action.*;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import edu.wisc.cs.sdn.apps.util.ArpServer;
+import edu.wisc.cs.sdn.apps.util.SwitchCommands;
+import edu.wisc.cs.sdn.apps.l3routing.L3Routing;
 
 import net.floodlightcontroller.core.FloodlightContext;
 import net.floodlightcontroller.core.IFloodlightProviderService;
@@ -30,7 +37,12 @@ import net.floodlightcontroller.devicemanager.IDevice;
 import net.floodlightcontroller.devicemanager.IDeviceService;
 import net.floodlightcontroller.devicemanager.internal.DeviceManagerImpl;
 import net.floodlightcontroller.packet.Ethernet;
+import net.floodlightcontroller.packet.TCP;
+import net.floodlightcontroller.packet.ARP;
+import net.floodlightcontroller.packet.IPv4;
 import net.floodlightcontroller.util.MACAddress;
+import net.floodlightcontroller.devicemanager.internal.Device;
+import net.floodlightcontroller.devicemanager.SwitchPort;
 
 public class LoadBalancer implements IFloodlightModule, IOFSwitchListener,
 		IOFMessageListener
@@ -109,8 +121,113 @@ public class LoadBalancer implements IFloodlightModule, IOFSwitchListener,
 		
 		/*********************************************************************/
 		/* TODO: Perform other tasks, if necessary                           */
-		
+		//System.out.println("List of instances");
+		//System.out.println(instances);
 		/*********************************************************************/
+	}
+
+	public void addDefaultRule(IOFSwitch currSwitch) {
+		OFMatch match = new OFMatch();
+
+		OFInstructionGotoTable OFGotoTable = new OFInstructionGotoTable((byte)1);
+		List<OFInstruction> instr = new ArrayList<OFInstruction>();
+		instr.add(OFGotoTable);
+		boolean ret = SwitchCommands.installRule(currSwitch, table, (short)1, match, instr, (short)0, (short)0, OFPacketOut.BUFFER_ID_NONE);
+		//System.out.println("Return Value : " + ret);
+	}
+
+	public void addRuleToSendToController(IOFSwitch currSwitch, short type) {
+		OFMatch match = new OFMatch();
+		match.setDataLayerType(type);
+		//match.setField(OFOXMFieldType.ARP_TPA, virtualIP);
+
+		OFActionOutput OFOut = new OFActionOutput();
+		OFOut.setPort(OFPort.OFPP_CONTROLLER);
+
+		List<OFAction> actions = new ArrayList<OFAction>();
+		actions.add(OFOut);
+
+		OFInstructionApplyActions applyAction = new OFInstructionApplyActions(actions);
+
+		List<OFInstruction> instr = new ArrayList<OFInstruction>();
+		instr.add(applyAction);
+
+		boolean ret = SwitchCommands.installRule(currSwitch, table, (short)2, match, instr, (short)0, (short)0, OFPacketOut.BUFFER_ID_NONE);
+		//System.out.println("Controller Return Value : " + ret);
+	}
+
+	public void addRuleNewTCPConnection(IOFSwitch currSwitch, int ip, byte type) {
+		OFMatch match = new OFMatch();
+		match.setDataLayerType((short)0x800);
+		match.setNetworkProtocol((byte)type);
+		match.setNetworkDestination(ip);
+
+		OFActionOutput OFOut = new OFActionOutput();
+		OFOut.setPort(OFPort.OFPP_CONTROLLER);
+
+		List<OFAction> actions = new ArrayList<OFAction>();
+		actions.add(OFOut);
+
+		OFInstructionApplyActions action = new OFInstructionApplyActions(actions);
+
+		List<OFInstruction> instr = new ArrayList<OFInstruction>();
+		instr.add(action);
+
+		boolean ret = SwitchCommands.installRule(currSwitch, table, (short)2, match, instr, (short)0, (short)0, OFPacketOut.BUFFER_ID_NONE);
+		//System.out.println("Return Value : " + ret);
+	}
+
+	public void addConnectionSpecificRule(IOFSwitch currSwitch, int srcIP, int dstIP, byte protocol, short srcPort, short dstPort, int serverIP, byte serverMAC[],
+											int virtualIP, byte[] virtualMAC) {
+		OFMatch match = new OFMatch();
+		match.setDataLayerType((short)0x800);
+		match.setNetworkSource(srcIP);
+		match.setNetworkDestination(dstIP);
+		match.setNetworkProtocol(protocol);
+		match.setTransportSource(srcPort);
+		match.setTransportDestination(dstPort);
+
+		OFActionSetField OFSetField1 = new OFActionSetField();
+		OFSetField1.setField(new OFOXMField(OFOXMFieldType.ETH_DST, serverMAC));
+		OFActionSetField OFSetField2 = new OFActionSetField();
+		OFSetField2.setField(new OFOXMField(OFOXMFieldType.IPV4_DST, serverIP));
+
+		List<OFAction> actions = new ArrayList<OFAction>();
+		actions.add(OFSetField1);
+		actions.add(OFSetField2);
+		OFInstructionApplyActions applyActions = new OFInstructionApplyActions(actions);
+
+		OFInstructionGotoTable OFGotoTable = new OFInstructionGotoTable(L3Routing.table);
+		List<OFInstruction> instr = new ArrayList<OFInstruction>();
+		instr.add(applyActions);
+		instr.add(OFGotoTable);
+		boolean ret = SwitchCommands.installRule(currSwitch, table, (short)3, match, instr, (short)0, (short)20, OFPacketOut.BUFFER_ID_NONE);
+		//System.out.println("Return Value : " + ret);
+
+		OFMatch reverseMatch = new OFMatch();
+		reverseMatch.setDataLayerType((short)0x800);
+		reverseMatch.setNetworkSource(serverIP);
+		reverseMatch.setNetworkDestination(srcIP);
+		reverseMatch.setNetworkProtocol(protocol);
+		reverseMatch.setTransportSource(dstPort);
+		reverseMatch.setTransportDestination(srcPort);
+
+		OFActionSetField reverseOFSetField1 = new OFActionSetField();
+		reverseOFSetField1.setField(new OFOXMField(OFOXMFieldType.ETH_SRC, virtualMAC));
+		OFActionSetField reverseOFSetField2 = new OFActionSetField();
+		reverseOFSetField2.setField(new OFOXMField(OFOXMFieldType.IPV4_SRC, virtualIP));
+		List<OFAction> reverseActions = new ArrayList<OFAction>();
+		reverseActions.add(reverseOFSetField1);
+		reverseActions.add(reverseOFSetField2);
+		OFInstructionApplyActions reverseApplyActions = new OFInstructionApplyActions(reverseActions);
+
+		OFInstructionGotoTable reverseOFGotoTable = new OFInstructionGotoTable((byte)1);
+		List<OFInstruction> reverseInstr = new ArrayList<OFInstruction>();
+		reverseInstr.add(reverseApplyActions);
+		reverseInstr.add(reverseOFGotoTable);
+
+		ret = SwitchCommands.installRule(currSwitch, table, (short)3, reverseMatch, reverseInstr, (short)0, (short)20, OFPacketOut.BUFFER_ID_NONE);
+		//System.out.println("Return Value : " + ret);
 	}
 	
 	/**
@@ -129,10 +246,36 @@ public class LoadBalancer implements IFloodlightModule, IOFSwitchListener,
 		/*       balancer IP to the controller                               */
 		/*       (2) ARP packets to the controller, and                      */
 		/*       (3) all other packets to the next rule table in the switch  */
-		
+
+		/* 1. Default rule to Controller for New TCP Connection */
+		//System.out.println("Install Default TCP rule");
+		//System.out.println("Install ARP Rule");
+		for(Integer virtualIP : instances.keySet()) {
+			//System.out.println("For : " + fromIPv4Address(virtualIP));
+			addRuleNewTCPConnection(sw, virtualIP, (byte)0x6);
+			//addRuleToSendToController(sw, virtualIP, (short)0x806);
+		}
+
+		/* 2 - Default ARP Rule */
+		addRuleToSendToController(sw, (short)0x806);
+
+		/* 3 - Default Rule - All other packets */	
+		//System.out.println("Installing default rules");
+		addDefaultRule(sw);
 		/*********************************************************************/
 	}
 	
+	public static String fromIPv4Address(int ipAddress) {
+        StringBuffer sb = new StringBuffer();
+        int result = 0;
+        for (int i = 0; i < 4; ++i) {
+            result = (ipAddress >> ((3-i)*8)) & 0xff;
+            sb.append(Integer.valueOf(result).toString());
+            if (i != 3)
+                sb.append(".");
+        }
+        return sb.toString();
+    }
 	/**
 	 * Handle incoming packets sent from switches.
 	 * @param sw switch on which the packet was received
@@ -161,12 +304,93 @@ public class LoadBalancer implements IFloodlightModule, IOFSwitchListener,
 		/*       ignore all other packets                                    */
 		
 		/*********************************************************************/
+		//System.out.println();
+		//System.out.println("Recived a packet");
+		//System.out.println();
+		if(ethPkt.getEtherType() == 0x806) {
+			ARP arpPacket = (ARP)ethPkt.getPayload();
+			if(arpPacket.getOpCode() == ARP.OP_REQUEST) {
+					//System.out.println("Received a ARP request");
+					int reqIPAddress = IPv4.toIPv4Address(arpPacket.getTargetProtocolAddress());
+					byte[] virtualMAC = new byte[6];
+					for(Integer ip : instances.keySet()) {
+						if(ip == reqIPAddress) {
+							virtualMAC = instances.get(ip).getVirtualMAC();
+							break;
+						}
+					}
+					int port = pktIn.getInPort();
+					//System.out.println("Sending ARP Reply");
+					sendARPReply(ethPkt, arpPacket, sw, (short)port, virtualMAC, reqIPAddress);
+			}
+		}
+		else if(ethPkt.getEtherType() == Ethernet.TYPE_IPv4) {
+			//System.out.println(ethPkt);
+			IPv4 packet = (IPv4)ethPkt.getPayload();
+			if(packet.getProtocol() == IPv4.PROTOCOL_TCP) {
+				TCP tcpPacket = (TCP)packet.getPayload();
+				short flags = tcpPacket.getFlags();
+				if(flags == 0x02) {
+						//System.out.println("TCP SYN Packet");
+						MACAddress srcMAC = ethPkt.getSourceMAC();
+						long sourceMAC = srcMAC.toLong();
+						MACAddress dstMAC = ethPkt.getDestinationMAC();
+						long destinationMAC = dstMAC.toLong();
 
+						int srcIP = packet.getSourceAddress();
+						int dstIP = packet.getDestinationAddress();
+						byte protocol = packet.getProtocol();
+
+						short srcPort = tcpPacket.getSourcePort();
+						short dstPort = tcpPacket.getDestinationPort();
+
+						LoadBalancerInstance inst = instances.get(dstIP);
+						byte[] virtualMAC = inst.getVirtualMAC();
+						int serverIP = inst.getNextHostIP();
+						System.out.println("Adding connection specific rules");
+						addConnectionSpecificRule(sw, srcIP, dstIP, protocol, srcPort, dstPort, serverIP, getHostMACAddress(serverIP), dstIP, virtualMAC);
+				}
+			}
+		}
 		
 		// We don't care about other packets
 		return Command.CONTINUE;
 	}
-	
+
+	/* ARP Reply */
+
+	public void sendARPReply(Ethernet inEtherPkt, ARP inArpPkt, IOFSwitch sw, short port, byte[] virtualMAC, int ip) {
+		Ethernet ether = new Ethernet();
+		ARP arpPkt = new ARP();
+
+		/* Construct Ethernet header */
+		ether.setEtherType(Ethernet.TYPE_ARP);
+		ether.setSourceMACAddress(virtualMAC);
+		ether.setDestinationMACAddress(inEtherPkt.getSourceMACAddress());
+
+		/* ARP Header */
+		arpPkt.setHardwareType(ARP.HW_TYPE_ETHERNET);
+		arpPkt.setProtocolType(ARP.PROTO_TYPE_IP);
+		arpPkt.setHardwareAddressLength((byte)Ethernet.DATALAYER_ADDRESS_LENGTH);
+		arpPkt.setProtocolAddressLength((byte)4);
+		arpPkt.setOpCode(ARP.OP_REPLY);
+		arpPkt.setSenderHardwareAddress(virtualMAC);
+		arpPkt.setSenderProtocolAddress(ip);
+		arpPkt.setTargetHardwareAddress(inArpPkt.getSenderHardwareAddress());
+		arpPkt.setTargetProtocolAddress(inArpPkt.getSenderProtocolAddress());
+
+		/* Set Ethernet Payload */
+		ether.setPayload(arpPkt);
+		//System.out.println("--------------- PACKET --------------");
+		//System.out.println(arpPkt);
+		//System.out.println(ether);
+		//System.out.println("Port : " + port);
+		//System.out.println("--------------- PACKET --------------");
+		/* Send ARP Reply */
+		boolean b = SwitchCommands.sendPacket(sw, port, ether);
+		//System.out.println("RET : " + b);
+	}
+
 	/**
 	 * Returns the MAC address for a host, given the host's IP address.
 	 * @param hostIPAddress the host's IP address

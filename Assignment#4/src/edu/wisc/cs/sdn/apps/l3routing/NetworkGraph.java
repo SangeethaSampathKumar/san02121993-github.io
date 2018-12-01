@@ -36,7 +36,7 @@ public class NetworkGraph {
 	public void addVertex(String vertexName) {
 		for(String vertex : vertices) {
 			if(vertex.equals(vertexName)) {
-				System.out.println(vertexName + " already in graph");
+//				System.out.println(vertexName + " already in graph");
 				return;
 			}
 		}
@@ -48,7 +48,7 @@ public class NetworkGraph {
 	public void addEdge(String u, String v, int srcPort, int dstPort) {
 		for(Edge e : edges) {
 			if(e.src.equals(u) && e.dst.equals(v)) {
-				System.out.println("Duplicate edge");
+//				System.out.println("Duplicate edge");
 				return;
 			}
 		}
@@ -86,11 +86,11 @@ public class NetworkGraph {
 		HashMap<String, HashMap<String, String>> shortestPathTable = new HashMap<String, HashMap<String, String>>();
 		// If no vertices(switches) in the network, return empty shortestPathTablele
 		if(this.V == 0) {
-			System.out.println("No vertices in graph");
+		//	System.out.println("No vertices in graph");
 			return shortestPathTable;
 		}
 		for(String vertex: this.vertices) {
-			System.out.println("For, " + vertex);
+		//	System.out.println("For, " + vertex);
 			HashMap<String, String> shortestPathTablele = bellmanFord(this, vertex);
 			shortestPathTable.put(vertex, shortestPathTablele);
 		}
@@ -180,6 +180,17 @@ public class NetworkGraph {
 		}
 	}
 
+	void clearEdgesOfVertex(String s1) {
+		Iterator itr = edges.iterator();
+		while(itr.hasNext()) {
+			Edge e = (Edge)itr.next();
+			if(e.src.equals(s1) || e.dst.equals(s1)) {
+				itr.remove();
+				this.E--;
+			}
+		}
+	}
+
 	HashMap<String, String> bellmanFord(NetworkGraph g, String vertex) {
 		HashMap<String, Integer> distance = new HashMap<String, Integer>(g.V);
 		HashMap<String, List<String>> path = new HashMap<String, List<String>>(g.V);
@@ -207,10 +218,10 @@ public class NetworkGraph {
 			}
 		}
 
-		System.out.println(distance);
-		System.out.println(path);
+		//System.out.println(distance);
+		//System.out.println(path);
 
-		System.out.println();
+		//System.out.println();
 		HashMap<String, String> table = new HashMap<String, String>();
 
 		for(Map.Entry<String, List<String>> entry: path.entrySet()) {
@@ -225,9 +236,9 @@ public class NetworkGraph {
 			if(vertex.equals(nextHop))
 				continue;
 			table.put(entry.getKey(), String.valueOf(getOutPort(vertex, nextHop)));
-			System.out.println(entry.getKey() + " : " + nextHop + " : " + getOutPort(vertex, nextHop));
+			//System.out.println(entry.getKey() + " : " + nextHop + " : " + getOutPort(vertex, nextHop));
 		}
-		System.out.println();
+		//System.out.println();
 
 		return table;
 	}
@@ -237,8 +248,8 @@ public class NetworkGraph {
 			if(e.src.equals(u) && e.dst.equals(v))
 				return e.srcPort;
 		}
-		System.out.println(u + "-->" + v);
-		System.out.println("Invalid case!");
+		//System.out.println(u + "-->" + v);
+		//System.out.println("Invalid case!");
 		return 0;
 	}
 
