@@ -21,6 +21,7 @@ public class DNS
 	public static final byte RCODE_NO_ERROR = 0;
 	public static final byte RCODE_FORMAT_ERROR = 1;
 	public static final byte RCODE_NOT_IMPLEMENTED = 4;
+	public static final short TYPE_TXT = 16;	
 	
 	private short id;
 	private boolean query;
