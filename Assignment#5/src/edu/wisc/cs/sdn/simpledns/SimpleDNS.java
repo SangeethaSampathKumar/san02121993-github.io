@@ -64,15 +64,17 @@ public class SimpleDNS
 	void initServer() {
 		while(true) {
 			try {
-				System.out.println("Waiting for data...!");
+				System.out.println("Waiting for DNS request!");
 				Arrays.fill(questionData, (byte)0);
 				questionPacket = new DatagramPacket(questionData, questionData.length);
 				serverSocket.receive(questionPacket);
-				System.out.println("Rcvd packet");
+				//System.out.println("Rcvd packet");
 			}catch(IOException e) {
 				return;
 			}catch(Exception e) {
 				System.out.println("Error : Exception " + e);
+				//System.exit(1);
+				continue;
 			}
 
 			/* Unwrapping UDP Packet */
@@ -89,8 +91,8 @@ public class SimpleDNS
 					continue;
 				}
 
-				System.out.println("Received DNS Questions:");
-				System.out.println(dnsQuestionPacket.getQuestions());
+				System.out.println();
+				System.out.println("DNS Questions: " + dnsQuestionPacket.getQuestions());
 				DNS resolvedPacket = null;
 				// If recursive bit set
 				if(dnsQuestionPacket.isRecursionDesired() == true) {
@@ -132,6 +134,7 @@ public class SimpleDNS
 					for(DNSResourceRecord rec : locanswers)
 						resolvedPacket.addAnswer(rec);
 				}
+				System.out.println("Answer : " + resolvedPacket.getAnswers());
 				sendDNSReply(resolvedPacket, questionPacket.getAddress(), questionPacket.getPort());
 			}
 		}
@@ -142,7 +145,7 @@ public class SimpleDNS
 			answerData = constructAnswerPacket(packet).serialize();
 			answerPacket = new DatagramPacket(answerData, answerData.length, IPAddress, port);
 			serverSocket.send(answerPacket);
-			System.out.println("Sent DNS answer to client IP [" + IPAddress + "] @ Port[" + port + "]");
+			//System.out.println("Sent DNS answer to client IP [" + IPAddress + "] @ Port[" + port + "]");
 		} catch(Exception e) {
 			System.out.println(e);
 			return false;
@@ -158,7 +161,7 @@ public class SimpleDNS
 			answerData = packet.serialize();
 			answerPacket = new DatagramPacket(answerData, answerData.length, IPAddress, port);
 			serverSocket.send(answerPacket);
-			System.out.println("Sent DNS answer to client IP [" + IPAddress + "] @ Port[" + port + "]");
+			//System.out.println("Sent DNS answer to client IP [" + IPAddress + "] @ Port[" + port + "]");
 		} catch(Exception e) {
 			System.out.println(e);
 			return false;
@@ -172,7 +175,7 @@ public class SimpleDNS
 			answerData = constructNonRecurseAnswerPacket(packet).serialize();
 			answerPacket = new DatagramPacket(answerData, answerData.length, IPAddress, port);
 			serverSocket.send(answerPacket);
-			System.out.println("Sent DNS answer to client IP [" + IPAddress + "] @ Port[" + port + "]");
+			//System.out.println("Sent DNS answer to client IP [" + IPAddress + "] @ Port[" + port + "]");
 		} catch(Exception e) {
 			System.out.println(e);
 			return false;
@@ -192,9 +195,9 @@ public class SimpleDNS
 		ans.setAdditional(packet.getAdditional());
 		ans.setQuestions(packet.getQuestions());
 
-		System.out.println("--------------------");
-		System.out.println(ans);
-		System.out.println("--------------------");
+		//System.out.println("--------------------");
+		//System.out.println(ans);
+		//System.out.println("--------------------");
 		return ans;
 	}
 
@@ -209,9 +212,9 @@ public class SimpleDNS
 		ans.setAdditional(packet.getAdditional());
 		ans.setAuthorities(packet.getAuthorities());
 
-		System.out.println("--------------------");
-		System.out.println(ans);
-		System.out.println("--------------------");
+		//System.out.println("--------------------");
+		//System.out.println(ans);
+		//System.out.println("--------------------");
 		return ans;
 	}
 
@@ -226,7 +229,7 @@ public class SimpleDNS
 				location = rec.location;
 			}
 		}
-		System.out.println("location when match found: " + location);
+		//System.out.println("location when match found: " + location);
 		return location;
 	}
 
@@ -243,57 +246,53 @@ public class SimpleDNS
 		DNS dnsReply = new DNS();
 		boolean isResolved = false;
 
-		System.out.println("------------------------------");
-		System.out.println("Resolving DNS Request");
-		System.out.println("------------------------------");
+		//System.out.println("------------------------------");
+		//System.out.println("Resolving DNS Request");
+		//System.out.println("------------------------------");
 
 		/* Recursively get the A record of Domain Name */
 		while(isResolved != true) {
-			System.out.println("Requesting IP Address : " + requestIPAddress);
-			System.out.println(dnsQuestionPacket.getQuestions());
+			//System.out.println("Requesting IP Address : " + requestIPAddress);
+			//System.out.println(dnsQuestionPacket.getQuestions());
 			dnsReply = sendDNSRequest(dnsQuestionPacket, requestIPAddress);
-
-			System.out.println("=====================");
-			System.out.println("Ans : " + dnsReply.getAnswers());
-			//System.out.println("Auth : " + dnsReply.getAuthorities());
-			//System.out.println("Additional : " + dnsReply.getAdditional());
-			System.out.println("=====================");
 
 			/* If the answers section is not empty, DNS request resolved */
 			if(dnsReply.getAnswers().size() != 0) {
-				System.out.println("Final Answer : ");
-				System.out.println(dnsReply.getAnswers());
 				isResolved = true;
 				break;
 			}
 
 			DNSRdataAddress data = null;
 			boolean hasRequiredRecordInReply = false;
+			boolean hasARecord = false;
 			/* Get the A record corresponding to the NS record from Additional section */
-			System.out.println("Checking the additional section for A records");
+			//System.out.println("Checking the additional section for A records");
 			for(DNSResourceRecord rec : dnsReply.getAdditional()) {
 				if(rec.getType() == DNS.TYPE_A) {
 					data = (DNSRdataAddress)rec.getData();
-					hasRequiredRecordInReply = true;
-					break;
+					hasARecord = true;
 				}
 			}
 
 			/* TBD:Check if the addition section is empty */
 			/* If so, use authoritative sections to resolve and get the IP */
-			if(hasRequiredRecordInReply == true) {
-				System.out.println("Found A Record : " + data);
+			if(hasARecord == true) {
+		//		System.out.println("Found A Record : " + data);
 				resultIPAddress = data.getAddress();
 			} else {
-				System.out.println("No A record in additional section");
+		//		System.out.println("No A record in additional section");
 				if(dnsReply.getAuthorities().size() == 0) {
-					System.out.println("No authoritative section! Unexpected condition!");
+					//System.out.println("No authoritative section! Unexpected condition!");
+					return null;
 				} else {
-					System.out.println("Using Authoritative section - Getting A record for NS");
-					System.out.println(dnsReply.getAuthorities());
-					System.out.println("Type : " + dnsReply.getAuthorities().get(0).getType());
+		//			System.out.println();
+		//			System.out.println();
+		//			System.out.println("Using Authoritative section - Getting A record for NS");
+					//System.out.println(dnsReply.getAuthorities());
+					//System.out.println("Type : " + dnsReply.getAuthorities().get(0).getType());
+		//			System.out.println(dnsReply.getAuthorities());
 					if(dnsReply.getAuthorities().get(0).getType() == 6) {
-						System.out.println("Could not resolve NS! Authorities have unknown type record");
+					//	System.out.println("Could not resolve NS! Authorities have unknown type record");
 						return null;
 					}
 					DNSRdataName NSName = null;
@@ -301,15 +300,21 @@ public class SimpleDNS
 						NSName = (DNSRdataName)dnsReply.getAuthorities().get(0).getData();
 					} catch(Exception e) {
 						System.out.println(e);
-						System.exit(1);
+						return null;
 					}
-					System.out.println("Frist NS record : " + NSName.getName());
+					//System.out.println("Frist NS record : " + NSName.getName());
 					resultIPAddress = resolveNSRecord(dnsQuestionPacket, NSName.getName(), DNS.TYPE_A);
-					System.out.println("Found IP for NS : " + resultIPAddress);
+					//System.out.println("Found IP for NS : " + resultIPAddress);
+					System.out.println();
+					System.out.println();
+					if(resultIPAddress == null) {
+					//	System.out.println("Could not resolve NS! SECOND");
+						return null;
+					}
 				}
 			}
 			if(isResolved != true) {
-				System.out.println("Next Name Server IP to contact : " + resultIPAddress);
+				//System.out.println("Next Name Server IP to contact : " + resultIPAddress);
 				requestIPAddress = resultIPAddress;
 				dnsReply = null;
 			}
@@ -336,18 +341,18 @@ public class SimpleDNS
 				DNSRdataName aliasName = (DNSRdataName)cnameRec.getData();
 				DNS cnameResolvePacket = constructDNSPacket(dnsQuestionPacket.getId(), dnsQuestionPacket.getOpcode(), aliasName.getName(), type);
 
-				System.out.println("--------------------------");
-				System.out.println("Resolving CNAME record");
-				System.out.println("--------------------------");
+				//System.out.println("--------------------------");
+				//System.out.println("Resolving CNAME record");
+				//System.out.println("--------------------------");
 				cnameDNSReply = recurseDNSRequest(cnameResolvePacket, type);
-				System.out.println("--------------------------");
-				System.out.println("Answer : ");
+				//System.out.println("--------------------------");
+				//System.out.println("Answer : ");
 				if(cnameDNSReply == null)
 				{
 					gotRequiredRecord = true;
 					break;
 				}
-				System.out.println(cnameDNSReply.getAnswers());
+				//System.out.println(cnameDNSReply.getAnswers());
 
 				// Add CNAME reply to the final reply to client
 				for(DNSResourceRecord rec : cnameDNSReply.getAnswers()) {
@@ -361,12 +366,14 @@ public class SimpleDNS
 				}
 			}
 		}
-		System.out.println("--------------------------");
+		//System.out.println("--------------------------");
+		//System.out.println("Final Answer: " + dnsReply.getAnswers());
+		System.out.println();
 		return dnsReply;
 	}
 
 	public InetAddress resolveNSRecord(DNS packet, String name, short type) {
-		System.out.println("-> Resolving NS record for " + name + " for type " + type);
+		//System.out.println("-> Resolving NS record for " + name + " for type " + type);
 		DNS nsRecordPacket = constructDNSPacket(packet.getId(), packet.getOpcode(), name, type);
 		DNS nsReplyPacket = recurseDNSRequest(nsRecordPacket, DNS.TYPE_A);
 		
@@ -379,7 +386,7 @@ public class SimpleDNS
 		}
 		if(data == null){
 			System.out.println("No A record found - not able to resolve NS record");
-			System.exit(1);
+			return null;
 		}
 		return data.getAddress();
 	}
@@ -392,13 +399,13 @@ public class SimpleDNS
 		packet.setRecursionDesired(true);
 		packet.setRecursionAvailable(false);
 
-		System.out.println("Construction DNS packet");
+		//System.out.println("Construction DNS packet");
 		//System.out.println("Name : " + name);
 		//System.out.println("Type : " + type);
 
 		/* Setting the DNS question */
 		DNSQuestion question = new DNSQuestion(name, type);
-		System.out.println("DNS Qs : " + question);
+		//System.out.println("DNS Qs : " + question);
 		List<DNSQuestion> qs = new ArrayList<DNSQuestion>();
 		qs.add(question);
 		packet.setQuestions(qs);
@@ -423,10 +430,10 @@ public class SimpleDNS
 			byte[] requestData = inPacket.serialize();
 			reqPacket = new DatagramPacket(requestData, requestData.length, reqIPAddress, 53);
 			clientSocket.send(reqPacket);
-			System.out.println("Sent DNS request to [" + reqIPAddress + "] @ [" + 53 + "]");
+			//System.out.println("Sent DNS request to [" + reqIPAddress + "] @ [" + 53 + "]");
 
 			// Receiving DNS Reply
-			System.out.println("Waiting for UDP reply");
+			//System.out.println("Waiting for UDP reply");
 			respPacket = new DatagramPacket(respData, respData.length);
 			clientSocket.receive(respPacket);
 		} catch(Exception e) {
@@ -434,9 +441,9 @@ public class SimpleDNS
 		}
 		dnsReply = dnsReply.deserialize(respPacket.getData(), respPacket.getLength());
 
-		System.out.println(dnsReply.getAnswers());
-		System.out.println(dnsReply.getAuthorities());
-		System.out.println(dnsReply.getAdditional());
+		//System.out.println(dnsReply.getAnswers());
+		//System.out.println(dnsReply.getAuthorities());
+		//System.out.println(dnsReply.getAdditional());
 		return dnsReply;
 	}
 
