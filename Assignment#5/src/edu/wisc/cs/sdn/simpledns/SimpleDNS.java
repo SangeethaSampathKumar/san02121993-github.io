@@ -91,7 +91,6 @@ public class SimpleDNS
 					continue;
 				}
 
-				System.out.println();
 				System.out.println("DNS Questions: " + dnsQuestionPacket.getQuestions());
 				DNS resolvedPacket = null;
 				// If recursive bit set
@@ -271,6 +270,7 @@ public class SimpleDNS
 				if(rec.getType() == DNS.TYPE_A) {
 					data = (DNSRdataAddress)rec.getData();
 					hasARecord = true;
+					break;
 				}
 			}
 
@@ -290,10 +290,10 @@ public class SimpleDNS
 		//			System.out.println("Using Authoritative section - Getting A record for NS");
 					//System.out.println(dnsReply.getAuthorities());
 					//System.out.println("Type : " + dnsReply.getAuthorities().get(0).getType());
-		//			System.out.println(dnsReply.getAuthorities());
+					//System.out.println(dnsReply.getAuthorities());
 					if(dnsReply.getAuthorities().get(0).getType() == 6) {
 					//	System.out.println("Could not resolve NS! Authorities have unknown type record");
-						return null;
+						return dnsReply;
 					}
 					DNSRdataName NSName = null;
 					try {
@@ -305,8 +305,6 @@ public class SimpleDNS
 					//System.out.println("Frist NS record : " + NSName.getName());
 					resultIPAddress = resolveNSRecord(dnsQuestionPacket, NSName.getName(), DNS.TYPE_A);
 					//System.out.println("Found IP for NS : " + resultIPAddress);
-					System.out.println();
-					System.out.println();
 					if(resultIPAddress == null) {
 					//	System.out.println("Could not resolve NS! SECOND");
 						return null;
@@ -352,6 +350,13 @@ public class SimpleDNS
 					gotRequiredRecord = true;
 					break;
 				}
+				if(cnameDNSReply.getAuthorities().size() != 0) {
+					if(cnameDNSReply.getAuthorities().get(0).getType() == 6)
+					{
+						gotRequiredRecord = true;
+						break;
+					}
+				}
 				//System.out.println(cnameDNSReply.getAnswers());
 
 				// Add CNAME reply to the final reply to client
@@ -368,7 +373,6 @@ public class SimpleDNS
 		}
 		//System.out.println("--------------------------");
 		//System.out.println("Final Answer: " + dnsReply.getAnswers());
-		System.out.println();
 		return dnsReply;
 	}
 
